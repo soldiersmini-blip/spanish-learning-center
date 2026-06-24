@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #f8fafc;
+}
+
+.dark {
+  color-scheme: dark;
+  background: #101522;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: #172033;
+  background:
+    radial-gradient(circle at top left, rgba(38, 120, 199, 0.10), transparent 36rem),
+    linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%);
+}
+
+.dark body {
+  color: #eef4f8;
+  background:
+    radial-gradient(circle at top left, rgba(45, 157, 102, 0.12), transparent 34rem),
+    linear-gradient(180deg, #101522 0%, #151d2d 100%);
+}
+
+button, input, select {
+  font: inherit;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-slate-200 bg-white shadow-soft dark:border-slate-700 dark:bg-slate-900;
+  }
+
+  .chip {
+    @apply rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700 dark:border-slate-700 dark:text-slate-200;
+  }
+}
