@@ -13,6 +13,10 @@ import {
   getWrongWordIds,
 } from '../utils/TrainingEngine';
 import {
+  readTrainingModePreferences,
+  saveTrainingModePreferences,
+} from '../utils/trainingModePreferences';
+import {
   createVocabTestRecord,
   getBestAccuracy,
   readVocabTestRecords,
@@ -33,6 +37,7 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
   const [records, setRecords] = useState<VocabTestRecord[]>(() => readVocabTestRecords(level));
   const [settings, setSettings] = useState<TrainingSettings>(() => ({
     ...defaultTrainingSettings,
+    modes: readTrainingModePreferences(),
     questionCount: [20, 50, 100, 200].includes(initialQuestionCount) ? initialQuestionCount as TrainingSettings['questionCount'] : 20,
   }));
   const [questions, setQuestions] = useState<TrainingQuestion[]>([]);
@@ -70,6 +75,16 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
     setAnswers([]);
     setTypedInput('');
     setFinalRecord(null);
+  }
+
+  function updateSettings(nextSettings: TrainingSettings) {
+    const modesChanged = nextSettings.modes.join('|') !== settings.modes.join('|');
+    if (modesChanged) {
+      const savedModes = saveTrainingModePreferences(nextSettings.modes);
+      setSettings({ ...nextSettings, modes: savedModes });
+      return;
+    }
+    setSettings(nextSettings);
   }
 
   function selectCount(count: number) {
@@ -220,7 +235,7 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
           settings={settings}
           totalWords={words.length}
           wrongCount={wrongWordIds.length}
-          onChange={setSettings}
+          onChange={updateSettings}
           onStart={() => startTraining(settings)}
         />
       </div>

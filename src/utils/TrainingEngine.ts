@@ -6,12 +6,13 @@ import type {
   TrainingSettings,
   TypingHintLevel,
 } from '../types/training';
+import { DEFAULT_TRAINING_MODES } from './trainingModePreferences';
 import { hasBlockingVocabularyIssue } from './validateVocabulary';
 
 const stripArticle = (value: string) => value.replace(/^(el|la|los|las|un|una|unos|unas)\s+/i, '').trim();
 
 export const defaultTrainingSettings: TrainingSettings = {
-  modes: ['word-recognition', 'sentence-fill-choice', 'typing'],
+  modes: DEFAULT_TRAINING_MODES,
   questionCount: 20,
   scope: 'all',
   showChineseHint: true,
