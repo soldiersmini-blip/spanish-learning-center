@@ -116,7 +116,11 @@ No browser storage was cleared during this deployment.
 
 ## Screenshot
 
-Automatic screenshot capture was attempted with local Microsoft Edge headless mode, but no screenshot file was produced by the browser command in this environment. Production verification was completed through GitHub Actions status and direct HTTP checks instead.
+Automatic screenshot capture succeeded after adding a page-load wait:
+
+- Screenshot file: `production-screenshot-2026-06-25.png`
+- Captured URL: `https://soldiersmini-blip.github.io/spanish-learning-center/?v=ffdc82e`
+- Result: homepage renders with the circular Spanish icon in the navigation and the large hero logo above `西班牙语学习中心`.
 
 ## Notes
 
