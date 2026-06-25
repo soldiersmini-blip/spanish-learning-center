@@ -22,7 +22,7 @@ export default function TestResult({ record, bestAccuracy, totalWords, words, re
           <div className="h-full rounded-full bg-brand-600" style={{ width: `${record.accuracy}%` }} />
         </div>
         <p className="mt-8 text-sm font-bold uppercase tracking-widest text-coral-600 dark:text-coral-100">A1/A2 Vocabulary Test</p>
-        <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">{record.level}词汇掌握测试</h2>
+        <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">{record.level} 词汇掌握测试</h2>
 
         <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3">
           <Metric label="正确率" value={`${record.accuracy}%`} />
@@ -35,10 +35,10 @@ export default function TestResult({ record, bestAccuracy, totalWords, words, re
             继续测试
           </button>
           <button type="button" onClick={onPracticeWrong} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            查看错题
+            练习错题
           </button>
           <button type="button" onClick={onExit} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            返回学习
+            返回训练中心
           </button>
         </div>
       </section>

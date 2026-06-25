@@ -18,6 +18,8 @@ import { a2VocabularyItems } from './data/vocabulary/a2';
 import type { LevelId, Locale } from './types';
 import { t, uiText } from './i18n';
 import { findNeuralEngineNode } from './utils/neural/neuralEngine';
+import { buildHashUrl, routeIdToHash } from './navigation/hashRoutes';
+import type { RouteId } from './navigation/routes';
 
 type AppPage = LevelId | 'home' | 'settings' | 'a1-test' | 'a2-test' | 'neural';
 type NeuralHistoryState = { neuralReturnUrl?: string };
@@ -29,12 +31,6 @@ function getHashRoute() {
   const parts = pathPart.split('/').filter(Boolean).map((part) => part.toLowerCase());
   const search = new URLSearchParams(queryPart);
   return { parts, search };
-}
-
-function buildHashUrl(path: string, query?: URLSearchParams | string) {
-  const cleanPath = path.replace(/^\/+/, '');
-  const queryText = typeof query === 'string' ? query : query?.toString();
-  return `#/${cleanPath}${queryText ? `?${queryText}` : ''}`;
 }
 
 function getInitialRoute(): AppPage {
@@ -81,14 +77,29 @@ export default function App() {
   function navigate(target: LevelId | 'home' | 'settings') {
     setPage(target);
     setNeuralNodeId('');
-    window.history.pushState({}, '', target === 'home' ? buildHashUrl('') : buildHashUrl(target));
+    window.history.pushState({}, '', routeIdToHash(target));
   }
 
-  function navigateTest(level: 'a1' | 'a2', count: number) {
+  function navigateRoute(routeId: RouteId) {
+    if (routeId === 'home' || routeId === 'settings' || routeId === 'a1' || routeId === 'a2' || routeId === 'b1' || routeId === 'b2') {
+      navigate(routeId);
+      return;
+    }
+    if (routeId === 'a1-test' || routeId === 'a1-test-session' || routeId === 'a1-test-result') {
+      navigateTest('a1', initialTestCount, routeId);
+      return;
+    }
+    if (routeId === 'a2-test' || routeId === 'a2-test-session' || routeId === 'a2-test-result') {
+      navigateTest('a2', initialTestCount, routeId);
+    }
+  }
+
+  function navigateTest(level: 'a1' | 'a2', count: number, routeId?: Extract<RouteId, 'a1-test' | 'a1-test-session' | 'a1-test-result' | 'a2-test' | 'a2-test-session' | 'a2-test-result'>) {
     setInitialTestCount(count);
     setPage(`${level}-test`);
     setNeuralNodeId('');
-    window.history.pushState({}, '', buildHashUrl(`${level}/test`, `count=${count}`));
+    const targetRouteId = routeId || (level === 'a1' ? 'a1-test' : 'a2-test');
+    window.history.pushState({}, '', routeIdToHash(targetRouteId, `count=${count}`));
   }
 
   function navigateNeural(nodeId: string) {
@@ -108,13 +119,8 @@ export default function App() {
 
   function returnFromNeural() {
     const state = window.history.state as NeuralHistoryState | null;
-    if (state?.neuralReturnUrl && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    const storedReturnUrl = sessionStorage.getItem(neuralReturnStorageKey);
-    if (storedReturnUrl) {
+    const storedReturnUrl = state?.neuralReturnUrl || sessionStorage.getItem(neuralReturnStorageKey);
+    if (storedReturnUrl && storedReturnUrl.includes('#/')) {
       window.history.replaceState({}, '', storedReturnUrl);
       syncRouteFromLocation();
       return;
@@ -163,7 +169,7 @@ export default function App() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => navigate(item.id)}
+          onClick={() => navigate(item.id)}
                   className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
                     page === item.id
                       ? 'bg-coral-600 text-white'
@@ -188,16 +194,17 @@ export default function App() {
       </header>}
 
       {page === 'home' && <Home locale={locale} onNavigate={navigate} />}
-      {page === 'a1' && <LevelPage content={a1Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onStartVocabTest={navigateTest} />}
-      {page === 'a2' && <LevelPage content={a2Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onStartVocabTest={navigateTest} />}
-      {page === 'b1' && <ComingSoon level="b1" locale={locale} onHome={() => navigate('home')} />}
-      {page === 'b2' && <ComingSoon level="b2" locale={locale} onHome={() => navigate('home')} />}
-      {page === 'settings' && <SettingsPage onBackHome={() => navigate('home')} />}
+      {page === 'a1' && <LevelPage content={a1Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onNavigateRoute={navigateRoute} onStartVocabTest={navigateTest} />}
+      {page === 'a2' && <LevelPage content={a2Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onNavigateRoute={navigateRoute} onStartVocabTest={navigateTest} />}
+      {page === 'b1' && <ComingSoon level="b1" locale={locale} onHome={() => navigate('home')} onNavigateRoute={navigateRoute} />}
+      {page === 'b2' && <ComingSoon level="b2" locale={locale} onHome={() => navigate('home')} onNavigateRoute={navigateRoute} />}
+      {page === 'settings' && <SettingsPage onBackHome={() => navigate('home')} onNavigateRoute={navigateRoute} />}
       {page === 'neural' && (
         <NeuralWorkspacePage
           nodeId={neuralNodeId}
           onBack={returnFromNeural}
           onOpenNode={navigateNeural}
+          onNavigateRoute={navigateRoute}
         />
       )}
       {page === 'a1-test' && (
@@ -206,6 +213,8 @@ export default function App() {
           words={a1VocabularyItems}
           initialQuestionCount={initialTestCount}
           onExit={() => navigate('a1')}
+          onNavigateRoute={navigateRoute}
+          onRouteChange={(routeId, count = initialTestCount) => navigateTest('a1', count, routeId as Extract<RouteId, 'a1-test' | 'a1-test-session' | 'a1-test-result'>)}
         />
       )}
       {page === 'a2-test' && (
@@ -214,6 +223,8 @@ export default function App() {
           words={a2VocabularyItems}
           initialQuestionCount={initialTestCount}
           onExit={() => navigate('a2')}
+          onNavigateRoute={navigateRoute}
+          onRouteChange={(routeId, count = initialTestCount) => navigateTest('a2', count, routeId as Extract<RouteId, 'a2-test' | 'a2-test-session' | 'a2-test-result'>)}
         />
       )}
       {!isImmersiveMode && <Footer />}

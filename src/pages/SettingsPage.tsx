@@ -1,8 +1,11 @@
-import { ArrowLeft, Download, Upload } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import PageHeader from '../components/navigation/PageHeader';
+import type { RouteId } from '../navigation/routes';
 
 interface Props {
   onBackHome: () => void;
+  onNavigateRoute: (routeId: RouteId) => void;
 }
 
 type ExportPayload = {
@@ -34,14 +37,12 @@ function normalizeImportPayload(value: unknown): Record<string, string> {
 
   const normalized: Record<string, string> = {};
   Object.entries(storage).forEach(([key, item]) => {
-    if (typeof key === 'string' && typeof item === 'string') {
-      normalized[key] = item;
-    }
+    if (typeof key === 'string' && typeof item === 'string') normalized[key] = item;
   });
   return normalized;
 }
 
-export default function SettingsPage({ onBackHome }: Props) {
+export default function SettingsPage({ onBackHome, onNavigateRoute }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = useState('');
   const [lastImportCount, setLastImportCount] = useState(0);
@@ -85,73 +86,74 @@ export default function SettingsPage({ onBackHome }: Props) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8">
-      <button
-        type="button"
-        onClick={onBackHome}
-        className="mb-5 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        返回首页
-      </button>
-
-      <section className="card p-6 sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-widest text-coral-600 dark:text-coral-100">Data migration</p>
-        <h1 className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">学习数据导入 / 导出</h1>
-        <p className="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
-          学习记录保存在浏览器本地。正式站点、localhost、不同电脑和不同浏览器的数据不会自动互通；需要先导出 JSON，再在目标页面导入。
-        </p>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={exportData}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-3 font-semibold text-white hover:bg-brand-700"
-          >
-            <Download className="h-5 w-5" />
-            导出学习数据
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-          >
-            <Upload className="h-5 w-5" />
-            导入学习数据
-          </button>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) void importData(file);
-          }}
-        />
-
-        {message && (
-          <p className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-            {message}
+    <>
+      <PageHeader
+        routeId="settings"
+        title="学习数据导入 / 导出"
+        eyebrow="Settings"
+        subtitle="导出或导入当前浏览器里的学习记录。"
+        onBack={onBackHome}
+        onNavigateRoute={onNavigateRoute}
+      />
+      <main className="mx-auto w-full max-w-5xl px-5 py-8">
+        <section className="card p-6 sm:p-8">
+          <p className="text-sm font-semibold uppercase tracking-widest text-coral-600 dark:text-coral-100">Data migration</p>
+          <h1 className="mt-3 text-3xl font-bold text-slate-950 dark:text-white">学习数据导入 / 导出</h1>
+          <p className="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
+            学习记录保存在浏览器本地。正式站点、localhost、不同电脑和不同浏览器的数据不会自动互通；需要先导出 JSON，再在目标页面导入。
           </p>
-        )}
 
-        <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-bold text-slate-950 dark:text-white">当前本地数据</h2>
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-300">{localKeys.length} 项</span>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={exportData}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-3 font-semibold text-white hover:bg-brand-700"
+            >
+              <Download className="h-5 w-5" />
+              导出学习数据
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              <Upload className="h-5 w-5" />
+              导入学习数据
+            </button>
           </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {localKeys.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-300">当前浏览器还没有学习记录。</p>}
-            {localKeys.map((key) => (
-              <div key={key} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950">
-                <span className="font-mono text-xs text-slate-700 dark:text-slate-200">{key}</span>
-              </div>
-            ))}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void importData(file);
+            }}
+          />
+
+          {message && (
+            <p className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+              {message}
+            </p>
+          )}
+
+          <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-bold text-slate-950 dark:text-white">当前本地数据</h2>
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-300">{localKeys.length} 项</span>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {localKeys.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-300">当前浏览器还没有学习记录。</p>}
+              {localKeys.map((key) => (
+                <div key={key} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950">
+                  <span className="font-mono text-xs text-slate-700 dark:text-slate-200">{key}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </>
   );
 }

@@ -9,7 +9,6 @@ type NeuralContextValue = {
 };
 
 const NeuralContext = createContext<NeuralContextValue | null>(null);
-type NeuralPanelHistoryState = { neuralPanelOpen?: boolean };
 
 interface Props {
   children: ReactNode;
@@ -18,45 +17,12 @@ interface Props {
 
 export default function NeuralProvider({ children, routeKey }: Props) {
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
-  const closePanel = () => {
-    const state = window.history.state as NeuralPanelHistoryState | null;
-    if (state?.neuralPanelOpen) {
-      window.history.back();
-      return;
-    }
-    setActiveNodeId(null);
-  };
 
   const value = useMemo<NeuralContextValue>(() => ({
     activeNodeId,
-    openNode: (nodeId: string) => setActiveNodeId((current) => {
-      const state = window.history.state as NeuralPanelHistoryState | null;
-      if (current === nodeId) {
-        if (state?.neuralPanelOpen) {
-          window.history.back();
-          return current;
-        }
-        return null;
-      }
-
-      if (!current && !state?.neuralPanelOpen) {
-        window.history.pushState({ ...(window.history.state || {}), neuralPanelOpen: true }, '', `${window.location.pathname}${window.location.search}${window.location.hash}`);
-      }
-
-      return nodeId;
-    }),
-    close: closePanel,
+    openNode: (nodeId: string) => setActiveNodeId((current) => (current === nodeId ? null : nodeId)),
+    close: () => setActiveNodeId(null),
   }), [activeNodeId]);
-
-  useEffect(() => {
-    function handlePopState() {
-      const state = window.history.state as NeuralPanelHistoryState | null;
-      if (!state?.neuralPanelOpen) setActiveNodeId(null);
-    }
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   useEffect(() => {
     setActiveNodeId(null);

@@ -16,6 +16,8 @@ import {
   readTrainingModePreferences,
   saveTrainingModePreferences,
 } from '../utils/trainingModePreferences';
+import type { RouteId } from '../navigation/routes';
+import { levelToResultRouteId, levelToSessionRouteId, levelToTestRouteId } from '../navigation/routes';
 import {
   createVocabTestRecord,
   getBestAccuracy,
@@ -29,11 +31,14 @@ interface Props {
   words: VocabItem[];
   initialQuestionCount: number;
   onExit: () => void;
+  onNavigateRoute: (routeId: RouteId) => void;
+  onRouteChange: (routeId: RouteId, count?: number) => void;
 }
 
 const wrongKey = (level: VocabTestLevel) => `spanish-vocab-training-wrong-${level}`;
+const draftKey = (level: VocabTestLevel) => `spanish-vocab-training-draft-${level}`;
 
-export default function VocabularyTestPage({ level, words, initialQuestionCount, onExit }: Props) {
+export default function VocabularyTestPage({ level, words, initialQuestionCount, onExit, onNavigateRoute, onRouteChange }: Props) {
   const [records, setRecords] = useState<VocabTestRecord[]>(() => readVocabTestRecords(level));
   const [settings, setSettings] = useState<TrainingSettings>(() => ({
     ...defaultTrainingSettings,
@@ -46,6 +51,7 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
   const [typedInput, setTypedInput] = useState('');
   const [finalRecord, setFinalRecord] = useState<VocabTestRecord | null>(null);
   const [wrongWordIds, setWrongWordIds] = useState<string[]>(() => readWrongIds(level));
+  const [confirmExitOpen, setConfirmExitOpen] = useState(false);
 
   useEffect(() => {
     setRecords(readVocabTestRecords(level));
@@ -66,6 +72,10 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
   const sourceWord = currentQuestion ? words.find((word) => word.id === currentQuestion.sourceWordId) : undefined;
   const wrongResults = answers.filter((item): item is TrainingAnswerResult => Boolean(item && !item.correct));
   const stats = useMemo(() => getTodayStats(records), [records]);
+  const testRouteId = levelToTestRouteId(level);
+  const sessionRouteId = levelToSessionRouteId(level);
+  const resultRouteId = levelToResultRouteId(level);
+  const trainingCenterLabel = `${level} 词汇训练中心`;
 
   function startTraining(nextSettings = settings) {
     const nextQuestions = buildTrainingQuestions(words, nextSettings, wrongWordIds);
@@ -75,6 +85,8 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
     setAnswers([]);
     setTypedInput('');
     setFinalRecord(null);
+    setConfirmExitOpen(false);
+    onRouteChange(sessionRouteId, nextSettings.questionCount);
   }
 
   function updateSettings(nextSettings: TrainingSettings) {
@@ -141,6 +153,7 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
     setWrongWordIds(nextWrongIds);
     setRecords(savedRecords);
     setFinalRecord(record);
+    onRouteChange(resultRouteId, settings.questionCount);
   }
 
   function practiceWrong() {
@@ -152,12 +165,61 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
     startTraining(nextSettings);
   }
 
+  function returnToTrainingCenter() {
+    setQuestions([]);
+    setAnswers([]);
+    setFinalRecord(null);
+    setCurrentIndex(0);
+    setTypedInput('');
+    setConfirmExitOpen(false);
+    onRouteChange(testRouteId, settings.questionCount);
+  }
+
+  function saveAndReturnToTrainingCenter() {
+    saveDraft(level, {
+      savedAt: new Date().toISOString(),
+      settings,
+      currentIndex,
+      answers,
+      questionIds: questions.map((question) => question.id),
+    });
+    returnToTrainingCenter();
+  }
+
+  function abandonAndReturnToTrainingCenter() {
+    sessionStorage.removeItem(draftKey(level));
+    returnToTrainingCenter();
+  }
+
+  function requestSessionExit() {
+    if (questions.length > 0 && !finalRecord && (currentIndex > 0 || answers.some(Boolean))) {
+      setConfirmExitOpen(true);
+      return;
+    }
+    returnToTrainingCenter();
+  }
+
+  function handleNavigateRoute(routeId: RouteId) {
+    if (routeId === testRouteId) {
+      if (currentQuestion && !finalRecord) {
+        requestSessionExit();
+        return;
+      }
+      returnToTrainingCenter();
+      return;
+    }
+    onNavigateRoute(routeId);
+  }
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        if (questions.length > 0) {
-          setQuestions([]);
-          setFinalRecord(null);
+        if (finalRecord) {
+          returnToTrainingCenter();
+          return;
+        }
+        if (questions.length > 0 || currentQuestion) {
+          requestSessionExit();
           return;
         }
         onExit();
@@ -188,12 +250,15 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
       <div className="min-h-screen bg-paper dark:bg-slate-950">
         <TestHeader
           level={level}
+          routeId={resultRouteId}
+          title={`${level} 测试结果`}
           questionCount={settings.questionCount}
           todayQuestions={stats.todayQuestions}
           todayAccuracy={stats.todayAccuracy}
           streakDays={stats.streakDays}
           wrongCount={wrongWordIds.length}
-          onExit={() => setQuestions([])}
+          onExit={returnToTrainingCenter}
+          onNavigateRoute={handleNavigateRoute}
           onSelectCount={selectCount}
           onRestart={restart}
           onWrongOnly={practiceWrong}
@@ -206,10 +271,7 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
           results={answers.filter((item): item is TrainingAnswerResult => Boolean(item))}
           onRestart={restart}
           onPracticeWrong={practiceWrong}
-          onExit={() => {
-            setQuestions([]);
-            setFinalRecord(null);
-          }}
+          onExit={returnToTrainingCenter}
         />
       </div>
     );
@@ -220,12 +282,15 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
       <div className="min-h-screen bg-paper dark:bg-slate-950">
         <TestHeader
           level={level}
+          routeId={testRouteId}
+          title={`${level} 词汇训练中心`}
           questionCount={settings.questionCount}
           todayQuestions={stats.todayQuestions}
           todayAccuracy={stats.todayAccuracy}
           streakDays={stats.streakDays}
           wrongCount={wrongWordIds.length}
           onExit={onExit}
+          onNavigateRoute={handleNavigateRoute}
           onSelectCount={(count) => setSettings((current) => ({ ...current, questionCount: count as TrainingSettings['questionCount'] }))}
           onRestart={() => startTraining(settings)}
           onWrongOnly={practiceWrong}
@@ -246,12 +311,15 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
     <div className="min-h-screen bg-paper dark:bg-slate-950">
       <TestHeader
         level={level}
+        routeId={sessionRouteId}
+        title={`${level} 答题`}
         questionCount={settings.questionCount}
         todayQuestions={stats.todayQuestions}
         todayAccuracy={stats.todayAccuracy}
         streakDays={stats.streakDays}
         wrongCount={wrongWordIds.length}
-        onExit={() => setQuestions([])}
+        onExit={requestSessionExit}
+        onNavigateRoute={handleNavigateRoute}
         onSelectCount={selectCount}
         onRestart={restart}
         onWrongOnly={practiceWrong}
@@ -276,6 +344,30 @@ export default function VocabularyTestPage({ level, words, initialQuestionCount,
           onPrevious={goPrevious}
         />
       </main>
+      {confirmExitOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="training-exit-title">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-xs font-black uppercase tracking-widest text-coral-600 dark:text-coral-100">保护当前训练</p>
+            <h2 id="training-exit-title" className="mt-2 text-2xl font-black text-slate-950 dark:text-white">
+              返回 {trainingCenterLabel}？
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              当前答题尚未完成。你可以先保存本次训练草稿，只返回直属上级菜单，不会清除其他学习记录、错题、收藏或 Neural 数据。
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <button type="button" onClick={saveAndReturnToTrainingCenter} className="rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-700">
+                保存并返回
+              </button>
+              <button type="button" onClick={abandonAndReturnToTrainingCenter} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                放弃并返回
+              </button>
+              <button type="button" onClick={() => setConfirmExitOpen(false)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                继续训练
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -319,4 +411,12 @@ function saveWrongIds(level: VocabTestLevel, ids: string[]) {
 
 function mergeWrongIds(current: string[], next: string[]) {
   return Array.from(new Set([...next, ...current]));
+}
+
+function saveDraft(level: VocabTestLevel, draft: unknown) {
+  try {
+    sessionStorage.setItem(draftKey(level), JSON.stringify(draft));
+  } catch {
+    // Draft saving is best-effort; it must never block the explicit parent return.
+  }
 }
