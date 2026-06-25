@@ -5,6 +5,13 @@ export type RouteId =
   | 'b1'
   | 'b2'
   | 'settings'
+  | 'account'
+  | 'account-login'
+  | 'account-register'
+  | 'account-verify-email'
+  | 'account-password-recovery'
+  | 'account-sync'
+  | 'account-delete'
   | 'a1-test'
   | 'a1-test-session'
   | 'a1-test-result'
@@ -29,6 +36,13 @@ export const routeDefinitions = [
   { id: 'b1', path: '#/b1', title: 'B1', parentRouteId: 'home', navigationLevel: 1 },
   { id: 'b2', path: '#/b2', title: 'B2', parentRouteId: 'home', navigationLevel: 1 },
   { id: 'settings', path: '#/settings', title: '设置', parentRouteId: 'home', navigationLevel: 1 },
+  { id: 'account', path: '#/account', title: '个人中心', parentRouteId: 'home', navigationLevel: 1 },
+  { id: 'account-login', path: '#/account/login', title: '登录', parentRouteId: 'account', navigationLevel: 2 },
+  { id: 'account-register', path: '#/account/register', title: '注册', parentRouteId: 'account', navigationLevel: 2 },
+  { id: 'account-verify-email', path: '#/account/verify-email', title: '邮箱验证', parentRouteId: 'account', navigationLevel: 2 },
+  { id: 'account-password-recovery', path: '#/account/password-recovery', title: '密码恢复', parentRouteId: 'account', navigationLevel: 2 },
+  { id: 'account-sync', path: '#/account/sync', title: '同步管理', parentRouteId: 'account', navigationLevel: 2 },
+  { id: 'account-delete', path: '#/account/delete', title: '注销账号', parentRouteId: 'account', navigationLevel: 2 },
   { id: 'a1-test', path: '#/a1/test/settings', title: 'A1 词汇训练中心', parentRouteId: 'a1', navigationLevel: 2 },
   { id: 'a1-test-session', path: '#/a1/test/session', title: 'A1 答题', parentRouteId: 'a1-test', navigationLevel: 3 },
   { id: 'a1-test-result', path: '#/a1/test/result', title: 'A1 测试结果', parentRouteId: 'a1-test', navigationLevel: 3 },

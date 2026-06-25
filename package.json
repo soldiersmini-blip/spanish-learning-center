@@ -7,21 +7,22 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node scripts/training-mode-preferences.test.mjs && node scripts/navigation-rules.test.mjs && node scripts/neural-navigation.test.mjs && node scripts/neural-panel-interaction.test.mjs"
+    "test": "node scripts/training-mode-preferences.test.mjs && node scripts/navigation-rules.test.mjs && node scripts/neural-navigation.test.mjs && node scripts/neural-panel-interaction.test.mjs && node scripts/account-framework.test.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
     "@vitejs/plugin-react": "^5.0.0",
-    "vite": "^7.0.0",
-    "typescript": "^5.8.3",
+    "lucide-react": "^0.468.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "lucide-react": "^0.468.0"
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4.17",
-    "postcss": "^8.4.49",
-    "autoprefixer": "^10.4.20",
     "@types/react": "^19.0.8",
-    "@types/react-dom": "^19.0.3"
+    "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
   }
 }
