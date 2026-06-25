@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { KnowledgeTreeSection, NeuralNode, NeuralRelation } from '../../types/neuralEngine';
 import { findNeuralEngineNode, getKnowledgeTree } from '../../utils/neural/neuralEngine';
 import NeuralPanelHeader from './NeuralPanelHeader';
@@ -16,30 +17,174 @@ type NeuralStackEntry = {
   source?: 'root' | 'recommendation' | 'section';
 };
 
+type PanelRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type PointerInteraction = {
+  type: 'drag' | 'resize';
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startRect: PanelRect;
+};
+
+const DESKTOP_BREAKPOINT = 768;
+const PANEL_SAFE_GAP = 12;
+const MIN_PANEL_WIDTH = 320;
+const MIN_PANEL_HEIGHT = 360;
+
 export default function NeuralDrawer({ nodeId, onClose }: Props) {
   const initialNode = findNeuralEngineNode(nodeId);
+  const [isDesktopPanel, setIsDesktopPanel] = useState(false);
+  const [panelRect, setPanelRect] = useState<PanelRect | null>(null);
+  const interactionRef = useRef<PointerInteraction | null>(null);
+
+  useEffect(() => {
+    function syncPanelToViewport() {
+      const desktop = window.innerWidth >= DESKTOP_BREAKPOINT;
+      setIsDesktopPanel(desktop);
+      if (!desktop) return;
+      setPanelRect((current) => clampPanelRect(current || createDefaultPanelRect(), window.innerWidth, window.innerHeight));
+    }
+
+    if (nodeId) syncPanelToViewport();
+    window.addEventListener('resize', syncPanelToViewport);
+    return () => window.removeEventListener('resize', syncPanelToViewport);
+  }, [nodeId]);
+
+  useEffect(() => {
+    function movePanel(event: PointerEvent) {
+      const interaction = interactionRef.current;
+      if (!interaction || event.pointerId !== interaction.pointerId) return;
+
+      const deltaX = event.clientX - interaction.startX;
+      const deltaY = event.clientY - interaction.startY;
+      const nextRect = interaction.type === 'drag'
+        ? {
+            ...interaction.startRect,
+            x: interaction.startRect.x + deltaX,
+            y: interaction.startRect.y + deltaY,
+          }
+        : {
+            ...interaction.startRect,
+            width: interaction.startRect.width + deltaX,
+            height: interaction.startRect.height + deltaY,
+          };
+
+      setPanelRect(clampPanelRect(nextRect, window.innerWidth, window.innerHeight));
+    }
+
+    function endPointerInteraction() {
+      if (!interactionRef.current) return;
+      interactionRef.current = null;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    }
+
+    window.addEventListener('pointermove', movePanel);
+    window.addEventListener('pointerup', endPointerInteraction);
+    window.addEventListener('pointercancel', endPointerInteraction);
+    return () => {
+      window.removeEventListener('pointermove', movePanel);
+      window.removeEventListener('pointerup', endPointerInteraction);
+      window.removeEventListener('pointercancel', endPointerInteraction);
+      endPointerInteraction();
+    };
+  }, []);
+
   if (!nodeId) return null;
+
+  function beginPointerInteraction(type: PointerInteraction['type'], event: ReactPointerEvent<HTMLElement>, rect: PanelRect) {
+    interactionRef.current = {
+      type,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startRect: rect,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = type === 'drag' ? 'move' : 'nwse-resize';
+  }
+
+  function startDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (!isDesktopPanel || !panelRect || shouldIgnoreDragTarget(event.target)) return;
+    event.preventDefault();
+    beginPointerInteraction('drag', event, panelRect);
+  }
+
+  function startResize(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (!isDesktopPanel || !panelRect) return;
+    event.preventDefault();
+    event.stopPropagation();
+    beginPointerInteraction('resize', event, panelRect);
+  }
+
+  const desktopPanelStyle = isDesktopPanel && panelRect
+    ? {
+        left: `${panelRect.x}px`,
+        top: `${panelRect.y}px`,
+        right: 'auto',
+        bottom: 'auto',
+        width: `${panelRect.width}px`,
+        height: `${panelRect.height}px`,
+        maxHeight: 'none',
+      }
+    : undefined;
 
   return (
     <aside
       className="fixed inset-x-3 bottom-3 z-40 flex max-h-[82vh] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950 md:inset-x-auto md:bottom-4 md:right-3 md:top-16 md:max-h-none md:w-[340px] md:rounded-2xl xl:bottom-5 xl:right-5 xl:top-24 xl:w-[390px] 2xl:w-[420px]"
       aria-label="Neural Link 语言知识图谱辅助栏"
+      style={desktopPanelStyle}
     >
       {initialNode ? (
-        <KnowledgeRail initialNode={initialNode} onClose={onClose} />
+        <KnowledgeRail
+          initialNode={initialNode}
+          onClose={onClose}
+          onStartDrag={startDrag}
+          draggable={isDesktopPanel}
+        />
       ) : (
         <>
-          <NeuralPanelHeader title="未找到节点" onClose={onClose} />
+          <NeuralPanelHeader title="未找到节点" onClose={onClose} onDragPointerDown={startDrag} draggable={isDesktopPanel} />
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
             <p className="text-sm text-slate-500 dark:text-slate-300">这个 Neural 节点暂时不存在。</p>
           </div>
         </>
       )}
+
+      {isDesktopPanel && (
+        <button
+          type="button"
+          onPointerDown={startResize}
+          className="absolute bottom-0 right-0 hidden h-7 w-7 cursor-nwse-resize rounded-tl-xl border-l border-t border-slate-200 bg-white/90 text-slate-400 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-500 dark:hover:text-brand-100 md:block"
+          aria-label="调整 Neural Link 面板大小"
+          title="调整面板大小"
+          data-neural-resize-handle="true"
+        >
+          <span className="pointer-events-none absolute bottom-1.5 right-1.5 h-3 w-3 border-b-2 border-r-2 border-current" />
+        </button>
+      )}
     </aside>
   );
 }
 
-function KnowledgeRail({ initialNode, onClose }: { initialNode: NeuralNode; onClose: () => void }) {
+function KnowledgeRail({
+  initialNode,
+  onClose,
+  onStartDrag,
+  draggable,
+}: {
+  initialNode: NeuralNode;
+  onClose: () => void;
+  onStartDrag: (event: ReactPointerEvent<HTMLElement>) => void;
+  draggable: boolean;
+}) {
   const [stack, setStack] = useState<NeuralStackEntry[]>([{ nodeId: initialNode.id, source: 'root' }]);
   const [openSections, setOpenSections] = useState<string[]>(['usage', 'scene', 'contrast', 'grammar', 'path']);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -63,7 +208,7 @@ function KnowledgeRail({ initialNode, onClose }: { initialNode: NeuralNode; onCl
   if (!tree) {
     return (
       <>
-        <NeuralPanelHeader title={activeNode.title} onClose={onClose} />
+        <NeuralPanelHeader title={activeNode.title} onClose={onClose} onDragPointerDown={onStartDrag} draggable={draggable} />
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <p className="text-sm text-slate-500 dark:text-slate-300">这个节点暂时没有知识树。</p>
         </div>
@@ -112,6 +257,8 @@ function KnowledgeRail({ initialNode, onClose }: { initialNode: NeuralNode; onCl
         backLabel={backLabel}
         onBack={previousEntry ? goBackOneLevel : undefined}
         onClose={onClose}
+        onDragPointerDown={onStartDrag}
+        draggable={draggable}
       />
 
       <div ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -252,4 +399,39 @@ function Insight({ label, value }: { label: string; value: string }) {
       <p className="mt-1 leading-5 text-slate-700 dark:text-slate-200">{value}</p>
     </div>
   );
+}
+
+function createDefaultPanelRect(): PanelRect {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const width = Math.min(420, Math.max(MIN_PANEL_WIDTH, viewportWidth - PANEL_SAFE_GAP * 2));
+  const height = Math.min(640, Math.max(MIN_PANEL_HEIGHT, viewportHeight - PANEL_SAFE_GAP * 2));
+  return clampPanelRect({
+    x: viewportWidth - width - 20,
+    y: Math.max(64, PANEL_SAFE_GAP),
+    width,
+    height: Math.min(height, viewportHeight - Math.max(64, PANEL_SAFE_GAP) - 20),
+  }, viewportWidth, viewportHeight);
+}
+
+function clampPanelRect(rect: PanelRect, viewportWidth: number, viewportHeight: number): PanelRect {
+  const maxWidth = Math.max(MIN_PANEL_WIDTH, viewportWidth - PANEL_SAFE_GAP * 2);
+  const maxHeight = Math.max(MIN_PANEL_HEIGHT, viewportHeight - PANEL_SAFE_GAP * 2);
+  const width = clamp(rect.width, MIN_PANEL_WIDTH, maxWidth);
+  const height = clamp(rect.height, MIN_PANEL_HEIGHT, maxHeight);
+  return {
+    width,
+    height,
+    x: clamp(rect.x, PANEL_SAFE_GAP, viewportWidth - width - PANEL_SAFE_GAP),
+    y: clamp(rect.y, PANEL_SAFE_GAP, viewportHeight - height - PANEL_SAFE_GAP),
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
+}
+
+function shouldIgnoreDragTarget(target: EventTarget) {
+  return target instanceof HTMLElement && Boolean(target.closest('button, a, input, textarea, select, [data-no-drag="true"], [data-neural-resize-handle="true"]'));
 }
