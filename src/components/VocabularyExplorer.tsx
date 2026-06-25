@@ -23,6 +23,8 @@ export default function VocabularyExplorer({ categories, locale }: Props) {
     label: t(category.title, locale),
     count: category.items.length,
   }));
+  const totalCount = tabs.reduce((sum, tab) => sum + tab.count, 0);
+  const levelLabel = categories[0]?.items[0]?.level || '';
 
   const visibleGroups = useMemo(() => {
     return categories
@@ -51,6 +53,12 @@ export default function VocabularyExplorer({ categories, locale }: Props) {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">词汇总量</p>
+        <h3 className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">
+          {levelLabel} {totalCount} 个核心词汇
+        </h3>
+      </div>
       <CategoryTabs tabs={tabs} activeId={activeCategory} onChange={setActiveCategory} allLabel={t(uiText.allThemes, locale)} />
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">

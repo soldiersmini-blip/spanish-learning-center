@@ -1,5 +1,6 @@
 import type { GrammarPoint, LevelContent, SentencePattern, SkillItem, VocabCategory, VocabItem } from '../types';
 import { a2GrammarTopics } from './grammar/a2Grammar';
+import { a2VocabularyCategories } from './vocabulary/a2';
 
 const L = (zh: string, en: string, es: string) => ({ zh, en, es });
 const v = (spanish: string, zh: string, en: string, example: string): VocabItem => ({ spanish, zh, en, example });
@@ -269,7 +270,7 @@ export const a2Content: LevelContent = {
       title: L('A2 词汇', 'A2 vocabulary', 'Vocabulario A2'),
       description: L('围绕生活、健康、旅行、工作、科技和过去/未来表达扩展词汇。', 'Expand vocabulary around life, health, travel, work, technology, past, and future.', 'Amplía vocabulario de vida diaria, salud, viajes, trabajo, tecnología, pasado y futuro.'),
       type: 'vocabulary',
-      vocabCategories: a2Vocab,
+      vocabCategories: a2VocabularyCategories,
       quiz: {
         question: L('用 viajar、reserva、cita、batería 各写一个短句。', 'Write one short sentence each with viajar, reserva, cita, and batería.', 'Escribe una frase con viajar, reserva, cita y batería.'),
         answer: L('例：Voy a viajar mañana. Tengo una reserva. Tengo una cita. La batería está baja。', 'Example: Voy a viajar mañana. Tengo una reserva. Tengo una cita. La batería está baja.', 'Ejemplo: Voy a viajar mañana. Tengo una reserva. Tengo una cita. La batería está baja.'),

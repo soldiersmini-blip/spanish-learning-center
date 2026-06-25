@@ -1,5 +1,6 @@
 import type { LevelId, Locale } from '../types';
 import { t, uiText } from '../i18n';
+import BrandLogo from './BrandLogo';
 
 interface Props {
   locale: Locale;
@@ -13,12 +14,21 @@ const levels: Array<{ id: LevelId; title: Record<Locale, string>; enabled: boole
   { id: 'b2', title: { zh: 'B2 预留窗口', en: 'B2 Reserved', es: 'B2 Reservado' }, enabled: false },
 ];
 
+const heroCopy: Record<Locale, string[]> = {
+  zh: ['A1-A2 系统化自学路线', '从零基础到独立交流'],
+  en: ['A1-A2 structured self-study path', 'From zero basics to independent communication'],
+  es: ['Ruta sistemática de autoaprendizaje A1-A2', 'Desde cero hasta comunicarte con autonomía'],
+};
+
 export default function Home({ locale, onNavigate }: Props) {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-104px)] w-full max-w-5xl flex-col justify-center px-5 py-10">
       <div className="mb-9 text-center">
+        <BrandLogo variant="hero" size="large" className="mb-6 justify-center" animated={false} />
         <h1 className="text-4xl font-bold tracking-normal text-slate-950 dark:text-white sm:text-5xl">{t(uiText.appTitle, locale)}</h1>
-        <p className="mt-4 text-base text-slate-600 dark:text-slate-300">{t(uiText.appSubtitle, locale)}</p>
+        <div className="mt-4 space-y-1 text-base font-medium text-slate-600 dark:text-slate-300 sm:text-lg">
+          {heroCopy[locale].map((line) => <p key={line}>{line}</p>)}
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {levels.map((level) => (

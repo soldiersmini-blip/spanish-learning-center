@@ -1,5 +1,6 @@
 import type { GrammarPoint, LevelContent, SentencePattern, SkillItem, VocabCategory, VocabItem } from '../types';
 import { a1GrammarTopics } from './grammar/a1Grammar';
+import { a1VocabularyCategories } from './vocabulary/a1';
 
 const L = (zh: string, en: string, es: string) => ({ zh, en, es });
 const v = (spanish: string, zh: string, en: string, example: string): VocabItem => ({ spanish, zh, en, example });
@@ -286,7 +287,7 @@ export const a1Content: LevelContent = {
       title: L('基础词汇', 'Basic vocabulary', 'Vocabulario básico'),
       description: L('按主题积累 A1 高频词，并通过例句理解用法。', 'Build high-frequency A1 words by topic with example sentences.', 'Aprende palabras frecuentes A1 por tema con ejemplos.'),
       type: 'vocabulary',
-      vocabCategories: a1Vocab,
+      vocabCategories: a1VocabularyCategories,
       quiz: {
         question: L('写出 3 个家庭成员词和 3 个城市地点词。', 'Write three family words and three places in town.', 'Escribe tres palabras de familia y tres lugares de la ciudad.'),
         answer: L('例：madre, padre, hermana；escuela, banco, estación。', 'Example: madre, padre, hermana; escuela, banco, estación.', 'Ejemplo: madre, padre, hermana; escuela, banco, estación.'),

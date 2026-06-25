@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { GrammarTopic } from '../types/grammar';
 import GrammarTopicDetail from './GrammarTopicDetail';
+import BrandLogo from './BrandLogo';
 
 interface Props {
   topics: GrammarTopic[];
@@ -26,6 +27,9 @@ export default function GrammarExplorer({ topics }: Props) {
     <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
       <aside className="lg:sticky lg:top-28 lg:self-start">
         <div className="flex gap-3 overflow-x-auto pb-2 lg:block lg:space-y-4 lg:overflow-visible lg:pb-0">
+          <section className="hidden rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 lg:block">
+            <BrandLogo size="small" showText subtitle="Spanish Learning Center" />
+          </section>
           {categories.map(([category, items]) => (
             <section key={category} className="min-w-64 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 lg:min-w-0">
               <h3 className="px-2 pb-2 text-sm font-bold text-slate-500 dark:text-slate-400">{category}</h3>

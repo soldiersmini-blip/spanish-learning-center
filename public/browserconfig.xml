@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="/spanish-learning-center/icons/icon-64.png"/>
+      <square150x150logo src="/spanish-learning-center/icons/icon-192.png"/>
+      <square310x310logo src="/spanish-learning-center/icons/icon-512.png"/>
+      <TileColor>#c21f2a</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>

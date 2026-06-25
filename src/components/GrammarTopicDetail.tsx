@@ -3,6 +3,7 @@ import type { GrammarTopic } from '../types/grammar';
 import CommonMistakes from './CommonMistakes';
 import ConjugationTable from './ConjugationTable';
 import MiniQuiz from './MiniQuiz';
+import GrammarNeuralConnections from './neural/GrammarNeuralConnections';
 
 interface Props {
   topic: GrammarTopic;
@@ -66,6 +67,7 @@ export default function GrammarTopicDetail({ topic }: Props) {
 
       <CommonMistakes mistakes={topic.commonMistakes} />
       <MiniQuiz quizzes={topic.miniQuiz} />
+      <GrammarNeuralConnections topic={topic} />
     </article>
   );
 }

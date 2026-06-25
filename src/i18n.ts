@@ -22,7 +22,7 @@ export const uiText = {
   backHome: { zh: '返回首页', en: 'Home', es: 'Inicio' },
   searchVocab: { zh: '搜索词汇、意思或例句', en: 'Search words, meanings, or examples', es: 'Buscar palabras, significados o ejemplos' },
   filterSentences: { zh: '按主题筛选句式', en: 'Filter patterns by theme', es: 'Filtrar frases por tema' },
-  allThemes: { zh: '全部主题', en: 'All themes', es: 'Todos los temas' },
+  allThemes: { zh: '全部', en: 'All', es: 'Todo' },
   audio: { zh: '播放音频', en: 'Play audio', es: 'Audio' },
   quiz: { zh: '小测验', en: 'Mini quiz', es: 'Mini prueba' },
   answer: { zh: '参考答案', en: 'Answer', es: 'Respuesta' },
@@ -35,7 +35,7 @@ export const uiText = {
   reservedBody: {
     zh: '这个阶段已经预留好路由和页面，后续可以继续接入课程数据。',
     en: 'The route and page are ready for future course content.',
-    es: 'La ruta y la página ya están listas para contenido futuro.',
+    es: 'La ruta y la página ya está lista para contenido futuro.',
   },
 };
 

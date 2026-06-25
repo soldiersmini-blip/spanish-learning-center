@@ -7,11 +7,17 @@ export type LocalizedText = Record<Locale, string>;
 
 export interface VocabItem {
   id?: string;
+  level?: 'A1' | 'A2';
   spanish: string;
   zh: string;
   en: string;
+  partOfSpeech?: string;
   example: string;
+  exampleZh?: string;
   category?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  commonCollocations?: string[];
+  grammarTags?: string[];
 }
 
 export interface VocabCategory {

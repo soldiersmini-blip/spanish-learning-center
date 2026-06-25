@@ -1,17 +1,23 @@
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import type { LevelContent, Locale } from '../types';
+import { useEffect, useState } from 'react';
+import type { LevelContent, LevelId, Locale } from '../types';
 import { t, uiText } from '../i18n';
-import ProgressBar from './ProgressBar';
 import ModulePanel from './ModulePanel';
+import BrandLogo from './BrandLogo';
+import VocabMasteryTest from './VocabMasteryTest';
+import NeuralLearningStats from './neural/NeuralLearningStats';
+import { a1VocabularyItems } from '../data/vocabulary/a1';
+import { a2VocabularyItems } from '../data/vocabulary/a2';
 
 interface Props {
   content: LevelContent;
   locale: Locale;
   onHome: () => void;
+  onNavigate: (target: LevelId) => void;
+  onStartVocabTest: (level: 'a1' | 'a2', count: number) => void;
 }
 
-export default function LevelPage({ content, locale, onHome }: Props) {
+export default function LevelPage({ content, locale, onHome, onNavigate, onStartVocabTest }: Props) {
   const storageKey = `spanish-progress-${content.id}`;
   const [completedIds, setCompletedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem(storageKey);
@@ -22,11 +28,12 @@ export default function LevelPage({ content, locale, onHome }: Props) {
     localStorage.setItem(storageKey, JSON.stringify(completedIds));
   }, [completedIds, storageKey]);
 
-  const completedCount = useMemo(() => completedIds.filter((id) => content.modules.some((module) => module.id === id)).length, [completedIds, content.modules]);
-
   function toggleModule(id: string) {
     setCompletedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
+
+  const vocabLevel = content.id === 'a1' ? 'A1' : 'A2';
+  const vocabWords = content.id === 'a1' ? a1VocabularyItems : a2VocabularyItems;
 
   return (
     <main className="mx-auto w-full max-w-7xl px-5 py-8">
@@ -34,13 +41,24 @@ export default function LevelPage({ content, locale, onHome }: Props) {
         <ArrowLeft className="h-4 w-4" />
         {t(uiText.backHome, locale)}
       </button>
-      <div className="mb-6 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-end">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-coral-600 dark:text-coral-100">{content.id.toUpperCase()}</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">{t(content.title, locale)}</h1>
-          <p className="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">{t(content.subtitle, locale)}</p>
+      <div className="mb-6">
+        <div className="flex items-center gap-4">
+          <BrandLogo size="medium" />
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-coral-600 dark:text-coral-100">{content.id.toUpperCase()}</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">{t(content.title, locale)}</h1>
+            <p className="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">{t(content.subtitle, locale)}</p>
+          </div>
         </div>
-        <ProgressBar completed={completedCount} total={content.modules.length} locale={locale} />
+      </div>
+      <div className="mb-6 grid gap-4 xl:grid-cols-[1fr_360px]">
+        <VocabMasteryTest
+          level={vocabLevel}
+          words={vocabWords}
+          onNavigate={onNavigate}
+          onStartTest={(count) => onStartVocabTest(content.id, count)}
+        />
+        <NeuralLearningStats level={vocabLevel} />
       </div>
       <div className="space-y-5">
         {content.modules.map((module) => (
