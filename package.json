@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node scripts/training-mode-preferences.test.mjs && node scripts/navigation-rules.test.mjs"
+    "test": "node scripts/training-mode-preferences.test.mjs && node scripts/navigation-rules.test.mjs && node scripts/neural-navigation.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",

@@ -2,7 +2,7 @@
 
 This project has one non-negotiable navigation rule:
 
-> Except for the global home page, every independently accessible page must provide a clear, clickable, always-visible entry that returns to its direct parent menu.
+> Except for the global home page, every independently accessible page, detail page, drawer state, modal state, and nested panel state must provide a clear, clickable, always-visible entry that returns to its direct parent menu or parent state.
 
 ## Required Rules
 
@@ -14,6 +14,16 @@ This project has one non-negotiable navigation rule:
 6. Return button text must name the destination, for example `返回 A1`, `返回 A1 词汇训练中心`, or `返回 学习中心`.
 7. In-progress tests, training, dictation, or Neural sessions must protect user data before returning.
 8. A new page that violates these rules must not be merged or deployed.
+
+## Neural Link Special Rules
+
+1. Neural drawers, side panels, workspaces, card details, recommendation details, scene details, collocation details, grammar relation details, and related-word details all count as page states.
+2. A close `X` closes the whole Neural panel only. It never replaces a parent return button.
+3. Any Neural child state must render a parent return entry such as `返回 ducharse` or `返回 智能推荐`.
+4. Returning from a Neural child state must pop only one Neural level and must not close the whole panel.
+5. Returning from a Neural child state should preserve the parent panel scroll position and expanded sections.
+6. Neural internal navigation must use an explicit state stack or explicit parent route. It must not rely on `navigate(-1)`, `history.back()`, or `window.history.back()` as the only behavior.
+7. New Neural child states must declare a parent state or route. Missing parent state is a test failure.
 
 ## Current Route Tree
 
@@ -34,13 +44,29 @@ This project has one non-negotiable navigation rule:
 └── 设置 (#/settings)
 ```
 
+## Neural Internal State Tree
+
+```text
+Neural Link side panel / workspace
+└── Word or knowledge node, for example ducharse
+    ├── Smart recommendations
+    │   └── Recommendation detail, for example 反身动词
+    ├── Real-life scene relations
+    │   └── Scene detail
+    ├── Collocations and example usage
+    │   └── Collocation or phrase detail
+    └── Meaning / grammar / contrast / memory / learning-path relations
+        └── Related node detail
+```
+
 ## Implementation Contract
 
 - Route metadata lives in `src/navigation/routes.ts`.
 - Hash route creation lives in `src/navigation/hashRoutes.ts`.
-- The unified visible return entry and breadcrumbs are rendered through `src/components/navigation/PageHeader.tsx`.
+- The unified page return entry and breadcrumbs are rendered through `src/components/navigation/PageHeader.tsx`.
 - Vocabulary test pages use `src/components/test/TestHeader.tsx`, which wraps `PageHeader`.
-- Navigation checks live in `scripts/navigation-rules.test.mjs` and run through `npm test`.
+- Neural internal panel return and close actions are rendered through `src/components/neural/NeuralPanelHeader.tsx`.
+- Navigation checks live in `scripts/navigation-rules.test.mjs` and `scripts/neural-navigation.test.mjs`; both run through `npm test`.
 
 ## In-Progress Session Rule
 
@@ -55,12 +81,14 @@ When a user leaves an active training or test session:
 
 ## Review Checklist
 
-Before merging or deploying a page-level change:
+Before merging or deploying a page-level or panel-level change:
 
-- The page has a route id.
-- The page has exactly one default direct parent route.
-- The visible back label matches the actual parent route.
+- The page or panel state has a route id or explicit parent state.
+- The page or panel state has exactly one default direct parent.
+- The visible back label matches the actual parent target.
+- A close button is not treated as a parent return button.
 - Deep-link refresh still has a useful parent return.
 - The page does not use `href="#"` as a return target.
 - The page does not rely on `navigate(-1)` or `history.back()` as the main return action.
+- Neural child panels preserve parent context as much as possible.
 - The page preserves relevant parent state as much as possible.

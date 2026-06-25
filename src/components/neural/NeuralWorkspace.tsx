@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { KnowledgeTreeSection, NeuralNode, NeuralRelation } from '../../types/neuralEngine';
-import { getKnowledgeTree } from '../../utils/neural/neuralEngine';
+import { findNeuralEngineNode, getKnowledgeTree } from '../../utils/neural/neuralEngine';
+import NeuralPanelHeader from './NeuralPanelHeader';
 import { markNodeVisited } from './NeuralProgress';
 
 interface Props {
@@ -8,12 +9,22 @@ interface Props {
   compact?: boolean;
 }
 
+type WorkspaceStackEntry = {
+  nodeId: string;
+  source?: 'root' | 'recommendation' | 'section';
+};
+
 export default function NeuralWorkspace({ nodeId, compact = false }: Props) {
-  const [activeId, setActiveId] = useState(nodeId);
-  const tree = getKnowledgeTree(activeId) || getKnowledgeTree(nodeId);
+  const [stack, setStack] = useState<WorkspaceStackEntry[]>([{ nodeId, source: 'root' }]);
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+  const activeEntry = stack[stack.length - 1];
+  const previousEntry = stack.length > 1 ? stack[stack.length - 2] : undefined;
+  const tree = getKnowledgeTree(activeEntry.nodeId) || getKnowledgeTree(nodeId);
+  const previousNode = previousEntry ? findNeuralEngineNode(previousEntry.nodeId) : undefined;
 
   useEffect(() => {
-    setActiveId(nodeId);
+    setStack([{ nodeId, source: 'root' }]);
+    scrollPositionsRef.current = {};
   }, [nodeId]);
 
   useEffect(() => {
@@ -24,50 +35,87 @@ export default function NeuralWorkspace({ nodeId, compact = false }: Props) {
     return <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-slate-500">这个节点暂时不存在。</div>;
   }
 
+  function saveCurrentScroll() {
+    scrollPositionsRef.current[activeEntry.nodeId] = window.scrollY;
+  }
+
+  function restoreScroll(nodeIdToRestore: string) {
+    window.setTimeout(() => {
+      window.scrollTo({ top: scrollPositionsRef.current[nodeIdToRestore] || 0, behavior: 'auto' });
+    }, 0);
+  }
+
+  function openChild(targetId: string, source: WorkspaceStackEntry['source']) {
+    if (targetId === activeEntry.nodeId) return;
+    saveCurrentScroll();
+    setStack((current) => [...current, { nodeId: targetId, source }]);
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 0);
+  }
+
+  function goBackOneLevel() {
+    if (!previousEntry) return;
+    const previousId = previousEntry.nodeId;
+    setStack((current) => current.slice(0, -1));
+    restoreScroll(previousId);
+  }
+
+  const backLabel = previousNode ? `返回 ${previousNode.title}` : undefined;
+
   if (compact) {
     return (
       <div className="space-y-4">
+        {previousEntry && (
+          <NeuralPanelHeader title={tree.center.title} backLabel={backLabel} onBack={goBackOneLevel} />
+        )}
         <CenterCard node={tree.center} />
-        {tree.sections.slice(0, 4).map((section) => <SectionGrid key={section.id} section={section} onSelect={setActiveId} compact />)}
+        {tree.sections.slice(0, 4).map((section) => (
+          <SectionGrid key={section.id} section={section} onSelect={(targetId) => openChild(targetId, 'section')} compact />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[0.8fr_1.3fr_0.9fr]">
-      <section className="space-y-4">
-        <CenterCard node={tree.center} />
-        <Panel title="为什么学" description={tree.summary.whyLearn} />
-        <Panel title="记忆钩子" description={tree.summary.memoryHint} />
-      </section>
+    <div className="space-y-5">
+      {previousEntry && (
+        <NeuralPanelHeader title={tree.center.title} backLabel={backLabel} onBack={goBackOneLevel} />
+      )}
 
-      <section className="space-y-4">
-        {tree.sections.filter((section) => ['usage', 'scene', 'contrast'].includes(section.id)).map((section) => (
-          <SectionGrid key={section.id} section={section} onSelect={setActiveId} />
-        ))}
-      </section>
+      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.3fr_0.9fr]">
+        <section className="space-y-4">
+          <CenterCard node={tree.center} />
+          <Panel title="为什么学" description={tree.summary.whyLearn} />
+          <Panel title="记忆钩子" description={tree.summary.memoryHint} />
+        </section>
 
-      <section className="space-y-4">
-        {tree.recommendations.length > 0 && (
-          <section className="rounded-2xl border border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/30 dark:bg-brand-500/10">
-            <h3 className="text-lg font-black text-slate-950 dark:text-white">智能推荐</h3>
-            <div className="mt-4 grid gap-3">
-              {tree.recommendations.map((item) => (
-                <RelationCard
-                  key={`rec-${item.node.id}-${item.relation.relationType}`}
-                  node={item.node}
-                  relation={item.relation}
-                  reason={item.rankReason}
-                  onSelect={setActiveId}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-        {tree.sections.filter((section) => ['grammar', 'memory', 'path', 'meaning'].includes(section.id)).map((section) => (
-          <SectionGrid key={section.id} section={section} onSelect={setActiveId} compact />
-        ))}
-      </section>
+        <section className="space-y-4">
+          {tree.sections.filter((section) => ['usage', 'scene', 'contrast'].includes(section.id)).map((section) => (
+            <SectionGrid key={section.id} section={section} onSelect={(targetId) => openChild(targetId, 'section')} />
+          ))}
+        </section>
+
+        <section className="space-y-4">
+          {tree.recommendations.length > 0 && (
+            <section className="rounded-2xl border border-brand-200 bg-brand-50/60 p-5 dark:border-brand-500/30 dark:bg-brand-500/10">
+              <h3 className="text-lg font-black text-slate-950 dark:text-white">智能推荐</h3>
+              <div className="mt-4 grid gap-3">
+                {tree.recommendations.map((item) => (
+                  <RelationCard
+                    key={`rec-${item.node.id}-${item.relation.relationType}`}
+                    node={item.node}
+                    relation={item.relation}
+                    reason={item.rankReason}
+                    onSelect={(targetId) => openChild(targetId, 'recommendation')}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+          {tree.sections.filter((section) => ['grammar', 'memory', 'path', 'meaning'].includes(section.id)).map((section) => (
+            <SectionGrid key={section.id} section={section} onSelect={(targetId) => openChild(targetId, 'section')} compact />
+          ))}
+        </section>
+      </div>
     </div>
   );
 }
@@ -80,7 +128,7 @@ function CenterCard({ node }: { node: NeuralNode }) {
         {node.semanticRole && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-950 dark:text-slate-300">{node.semanticRole}</span>}
       </div>
       <h2 className="mt-4 text-3xl font-black text-slate-950 dark:text-white">{node.title}</h2>
-      {(node.zh || node.en) && <p className="mt-2 leading-7 text-slate-600 dark:text-slate-300">{node.zh}{node.zh && node.en ? ' · ' : ''}{node.en}</p>}
+      {(node.zh || node.en) && <p className="mt-2 leading-7 text-slate-600 dark:text-slate-300">{node.zh}{node.zh && node.en ? ' / ' : ''}{node.en}</p>}
       {node.partOfSpeech && <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">词性：{node.partOfSpeech}</p>}
       {node.example && (
         <div className="mt-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-950">

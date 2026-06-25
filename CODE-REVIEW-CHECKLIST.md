@@ -11,6 +11,9 @@
 - Deep links can be opened directly and still provide a valid parent return.
 - In-progress tests or training sessions confirm before discarding current work.
 - Navigation changes pass `npm test`, including `scripts/navigation-rules.test.mjs`.
+- Drawers, modals, and panel child states also have a parent return entry.
+- Neural child details use `NeuralPanelHeader` and do not treat the close X as parent navigation.
+- Neural child details preserve parent scroll/context when returning.
 
 ## Learning Data Safety
 
