@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import type { LevelContent, LevelId, Locale } from '../types';
 import { t } from '../i18n';
-import ModulePanel from './ModulePanel';
 import BrandLogo from './BrandLogo';
 import VocabMasteryTest from './VocabMasteryTest';
 import NeuralLearningStats from './neural/NeuralLearningStats';
@@ -9,6 +7,8 @@ import { a1VocabularyItems } from '../data/vocabulary/a1';
 import { a2VocabularyItems } from '../data/vocabulary/a2';
 import PageHeader from './navigation/PageHeader';
 import type { RouteId } from '../navigation/routes';
+import LearningMap from './learning-map/LearningMap';
+import { learningMapsByLevelId } from '../data/learningMap';
 
 interface Props {
   content: LevelContent;
@@ -20,20 +20,9 @@ interface Props {
 }
 
 export default function LevelPage({ content, locale, onHome, onNavigate, onNavigateRoute, onStartVocabTest }: Props) {
-  const storageKey = `spanish-progress-${content.id}`;
-  const [completedIds, setCompletedIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) as string[] : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(completedIds));
-  }, [completedIds, storageKey]);
-
-  function toggleModule(id: string) {
-    setCompletedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  }
-
+  const learningMap = learningMapsByLevelId[content.id];
+  const testLevelId = content.id === 'a1' || content.id === 'a2' ? content.id : null;
+  const hasVocabularyTest = testLevelId !== null;
   const vocabLevel = content.id === 'a1' ? 'A1' : 'A2';
   const vocabWords = content.id === 'a1' ? a1VocabularyItems : a2VocabularyItems;
 
@@ -58,26 +47,20 @@ export default function LevelPage({ content, locale, onHome, onNavigate, onNavig
             </div>
           </div>
         </div>
-        <div className="mb-6 grid gap-4 xl:grid-cols-[1fr_360px]">
-          <VocabMasteryTest
-            level={vocabLevel}
-            words={vocabWords}
-            onNavigate={onNavigate}
-            onStartTest={(count) => onStartVocabTest(content.id, count)}
-          />
-          <NeuralLearningStats level={vocabLevel} />
-        </div>
-        <div className="space-y-5">
-          {content.modules.map((module) => (
-            <ModulePanel
-              key={module.id}
-              module={module}
-              locale={locale}
-              completed={completedIds.includes(module.id)}
-              onToggleComplete={() => toggleModule(module.id)}
+        {hasVocabularyTest && (
+          <div className="mb-6 grid gap-4 xl:grid-cols-[1fr_360px]">
+            <VocabMasteryTest
+              level={vocabLevel}
+              words={vocabWords}
+              onNavigate={onNavigate}
+              onStartTest={(count) => {
+                if (testLevelId) onStartVocabTest(testLevelId, count);
+              }}
             />
-          ))}
-        </div>
+            <NeuralLearningStats level={vocabLevel} />
+          </div>
+        )}
+        <LearningMap map={learningMap} modules={content.modules} locale={locale} />
       </main>
     </>
   );

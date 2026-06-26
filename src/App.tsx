@@ -4,7 +4,6 @@ import { AuthProvider } from './auth/AuthProvider';
 import AccountMenu from './components/account/AccountMenu';
 import BackToTopButton from './components/BackToTopButton';
 import BrandLogo from './components/BrandLogo';
-import ComingSoon from './components/ComingSoon';
 import Footer from './components/Footer';
 import Home from './components/Home';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -14,6 +13,8 @@ import { a1Content } from './data/a1';
 import { a1VocabularyItems } from './data/vocabulary/a1';
 import { a2Content } from './data/a2';
 import { a2VocabularyItems } from './data/vocabulary/a2';
+import { b1Content } from './data/b1';
+import { b2Content } from './data/b2';
 import { t, uiText } from './i18n';
 import { buildHashUrl, routeIdToHash } from './navigation/hashRoutes';
 import type { RouteId } from './navigation/routes';
@@ -220,8 +221,8 @@ export default function App() {
           {page === 'home' && <Home locale={locale} onNavigate={navigate} />}
           {page === 'a1' && <LevelPage content={a1Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onNavigateRoute={navigateRoute} onStartVocabTest={navigateTest} />}
           {page === 'a2' && <LevelPage content={a2Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onNavigateRoute={navigateRoute} onStartVocabTest={navigateTest} />}
-          {page === 'b1' && <ComingSoon level="b1" locale={locale} onHome={() => navigate('home')} onNavigateRoute={navigateRoute} />}
-          {page === 'b2' && <ComingSoon level="b2" locale={locale} onHome={() => navigate('home')} onNavigateRoute={navigateRoute} />}
+          {page === 'b1' && <LevelPage content={b1Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onNavigateRoute={navigateRoute} onStartVocabTest={navigateTest} />}
+          {page === 'b2' && <LevelPage content={b2Content} locale={locale} onHome={() => navigate('home')} onNavigate={navigate} onNavigateRoute={navigateRoute} onStartVocabTest={navigateTest} />}
           {page === 'settings' && <SettingsPage onBackHome={() => navigate('home')} onNavigateRoute={navigateRoute} />}
           {page === 'account' && <AccountPage mode="profile" locale={locale} onBack={() => navigate('home')} onNavigateRoute={navigateRoute} />}
           {page === 'account-login' && <AccountPage mode="login" locale={locale} onBack={() => navigate('account')} onNavigateRoute={navigateRoute} />}
