@@ -69,8 +69,17 @@ async function upsertMarker(supabase, userId, label) {
   }, { onConflict: 'user_id,namespace' });
 }
 
+async function deleteOwnMarker(supabase, userId) {
+  const { error } = await supabase
+    .from('user_data_documents')
+    .delete()
+    .eq('user_id', userId)
+    .eq('namespace', namespace);
+  if (error) throw new Error(`Failed to remove temporary marker: ${error.message}`);
+}
+
 async function restoreDocument(supabase, previous) {
-  if (!previous) return;
+  if (!previous) return false;
   const { error } = await supabase.from('user_data_documents').upsert({
     user_id: previous.user_id,
     namespace: previous.namespace,
@@ -80,25 +89,73 @@ async function restoreDocument(supabase, previous) {
     updated_at: previous.updated_at,
   }, { onConflict: 'user_id,namespace' });
   if (error) throw new Error(`Failed to restore previous document: ${error.message}`);
+  return true;
+}
+
+async function withMarker(supabase, user, label) {
+  const existing = await readOne(supabase, user.id);
+  if (existing.error) throw new Error(`Could not read ${label} existing document: ${existing.error.message}`);
+
+  const previous = existing.data;
+  const markerLabel = `${label.toLowerCase()}-${Date.now()}`;
+  const write = await upsertMarker(supabase, user.id, markerLabel);
+  if (write.error) throw new Error(`Could not write ${label} marker document: ${write.error.message}`);
+
+  const own = await readOne(supabase, user.id);
+  if (own.error || !own.data) throw new Error(`${label} could not read the marker it just wrote`);
+  assert.equal(own.data.payload?.rlsSmokeTest, markerLabel, `${label} marker payload mismatch`);
+
+  return { previous, markerLabel };
+}
+
+async function restoreOrDeleteMarker(supabase, userId, previous) {
+  const restored = await restoreDocument(supabase, previous);
+  if (!restored) await deleteOwnMarker(supabase, userId);
 }
 
 const anonymous = client();
 const anonymousRead = await anonymous.from('user_data_documents').select('user_id,namespace').limit(1);
-assert(anonymousRead.error, 'Unauthenticated user unexpectedly read private documents');
+assert(
+  anonymousRead.error || anonymousRead.data.length === 0,
+  'Unauthenticated user unexpectedly read private documents',
+);
+
+if (allowWrite) {
+  const anonymousWrite = await anonymous.from('user_data_documents').insert({
+    user_id: '00000000-0000-0000-0000-000000000000',
+    namespace,
+    schema_version: 1,
+    revision: Date.now(),
+    payload: { rlsSmokeTest: 'anonymous-write-should-fail' },
+  });
+  assert(anonymousWrite.error, 'Unauthenticated user unexpectedly wrote private documents');
+}
 
 const userA = await signIn('User A', readEnv(['RLS_TEST_USER_A_EMAIL', 'TEST_A_EMAIL']), readEnv(['RLS_TEST_USER_A_PASSWORD', 'TEST_A_PASSWORD']));
 const userB = await signIn('User B', readEnv(['RLS_TEST_USER_B_EMAIL', 'TEST_B_EMAIL']), readEnv(['RLS_TEST_USER_B_PASSWORD', 'TEST_B_PASSWORD']));
 
-let previousB = null;
+let markerA = null;
+let markerB = null;
 if (allowWrite) {
-  const existingB = await readOne(userB.supabase, userB.user.id);
-  if (existingB.error) throw new Error(`Could not read User B existing document: ${existingB.error.message}`);
-  previousB = existingB.data;
-  const marker = await upsertMarker(userB.supabase, userB.user.id, `b-${Date.now()}`);
-  if (marker.error) throw new Error(`Could not write User B marker document: ${marker.error.message}`);
+  markerA = await withMarker(userA.supabase, userA.user, 'User A');
+  markerB = await withMarker(userB.supabase, userB.user, 'User B');
 }
 
 try {
+  if (allowWrite) {
+    const anonymousReadsA = await selectDocuments(anonymous, userA.user.id);
+    assert(
+      anonymousReadsA.error || anonymousReadsA.data.length === 0,
+      'Unauthenticated user can read User A documents; RLS isolation failed',
+    );
+
+    const anonymousReadsB = await selectDocuments(anonymous, userB.user.id);
+    assert(
+      anonymousReadsB.error || anonymousReadsB.data.length === 0,
+      'Unauthenticated user can read User B documents; RLS isolation failed',
+    );
+  }
+
   const ownA = await selectDocuments(userA.supabase, userA.user.id);
   assert(!ownA.error, `User A could not read own documents: ${ownA.error?.message}`);
 
@@ -112,8 +169,17 @@ try {
   const crossBReadsA = await selectDocuments(userB.supabase, userA.user.id);
   assert(!crossBReadsA.error, `Cross-user select should be filtered, not fail unexpectedly: ${crossBReadsA.error?.message}`);
   assert.equal(crossBReadsA.data.length, 0, 'User B can read User A documents; RLS isolation failed');
+
+  if (allowWrite) {
+    const aWritesB = await upsertMarker(userA.supabase, userB.user.id, 'a-forging-b-should-fail');
+    assert(aWritesB.error, 'User A unexpectedly wrote a row owned by User B; RLS WITH CHECK failed');
+
+    const bWritesA = await upsertMarker(userB.supabase, userA.user.id, 'b-forging-a-should-fail');
+    assert(bWritesA.error, 'User B unexpectedly wrote a row owned by User A; RLS WITH CHECK failed');
+  }
 } finally {
-  if (allowWrite) await restoreDocument(userB.supabase, previousB);
+  if (allowWrite && markerA) await restoreOrDeleteMarker(userA.supabase, userA.user.id, markerA.previous);
+  if (allowWrite && markerB) await restoreOrDeleteMarker(userB.supabase, userB.user.id, markerB.previous);
   await userA.supabase.auth.signOut();
   await userB.supabase.auth.signOut();
 }

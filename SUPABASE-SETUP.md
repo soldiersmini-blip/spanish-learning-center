@@ -42,6 +42,8 @@ GitHub Pages build:
 
 Only the publishable key may be used by the frontend.
 
+GitHub Pages deployment is intentionally manual-only at this stage. The Pages workflow uses `workflow_dispatch` and should not deploy automatically from `main` until account sync acceptance is complete.
+
 ## 4. Database Migration
 
 Run:
@@ -96,7 +98,26 @@ $env:RLS_SMOKE_WRITE="1"
 
 Do not run write mode against important production accounts unless you have exported a backup first.
 
-## 6. Email and Anti-Abuse
+## 6. Cloud Sync Smoke Test
+
+After RLS passes, run the cloud sync smoke test:
+
+```powershell
+node scripts/cloud-sync-smoke-test.mjs
+```
+
+It reads the same ignored `.env.rls.local` file and uses only the publishable key plus normal A/B user sessions. It verifies:
+
+- `LocalDataAdapter` reads only owned Spanish-learning localStorage keys.
+- `CloudDataAdapter` can upload and read user-owned sync documents.
+- A and B cannot read each other's sync documents.
+- `mergeDocuments` preserves both local-only and cloud-only payload fields.
+- Empty cloud document lists do not clear local data.
+- Cloud client failure does not mutate local data.
+
+The script temporarily writes sync documents for the two test users and restores or removes them before exit.
+
+## 7. Email and Anti-Abuse
 
 Before production use:
 
@@ -105,7 +126,7 @@ Before production use:
 - Enable CAPTCHA if needed through Supabase Auth settings.
 - Keep CAPTCHA provider keys out of frontend code unless they are public site keys.
 
-## 7. Delete Account Function
+## 8. Delete Account Function
 
 Skeleton:
 
@@ -120,6 +141,6 @@ Deploy only after setting Supabase function secrets:
 
 The browser must call the function with the current user session. It must not submit arbitrary `user_id` values.
 
-## 8. Current Status
+## 9. Current Status
 
 At this stage the app has the account and sync framework. Without real Supabase environment variables, guest mode remains active and cloud account actions show a clear configuration warning.

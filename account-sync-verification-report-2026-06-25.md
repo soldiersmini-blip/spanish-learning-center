@@ -1,5 +1,107 @@
 # Account Sync Verification Report - 2026-06-25
 
+## Current Verification Update - 2026-06-26
+
+This section supersedes the earlier "C" decision below where the older text refers to missing Supabase/RLS validation.
+
+Current HEAD:
+
+- `a47bf3c89d9018f3426c07bcbe44a6bcfd6190ef`
+
+Current branch state:
+
+- `main...origin/main [ahead 3]`
+- After committing this verification update locally, this is expected to become `ahead 4`.
+- Push performed in this verification pass: no.
+- Deployment performed in this verification pass: no.
+
+Real Supabase status:
+
+- Project URL configured locally in ignored `.env.local`: yes.
+- Publishable key configured locally in ignored `.env.local`: yes.
+- Secret/service role key in frontend or repository: no.
+- SQL migration `202606250001_account_sync.sql` manually executed in Supabase Dashboard SQL Editor: yes.
+- Dashboard result observed: `Success. No rows returned`.
+
+Real A/B RLS test:
+
+- Test account A exists: `soldiersmini+testa@gmail.com`.
+- Test account B exists: `soldiersmini+testb@gmail.com`.
+- Test passwords are stored only in ignored `.env.rls.local`.
+- RLS smoke test command: `RLS_SMOKE_WRITE=1 node scripts/rls-smoke-test.mjs`.
+- Result: passed.
+- Verified with normal publishable key and normal user sessions, not service role.
+- User A can write and read its own `user_data_documents` row.
+- User B can write and read its own `user_data_documents` row.
+- User A cannot read User B documents.
+- User B cannot read User A documents.
+- User A cannot forge a write to User B's `user_id`.
+- User B cannot forge a write to User A's `user_id`.
+- Unauthenticated write is blocked.
+- Unauthenticated read does not expose A/B documents.
+- Temporary test rows are restored or removed after the test.
+
+Local verification after real Supabase configuration:
+
+| Command | Result | Notes |
+|---|---:|---|
+| `npm ci` | Passed | 1 low severity npm audit item remains; no automatic dependency change was made. |
+| `npm run build` | Passed | Existing Vite chunk-size warning remains: main JS chunk is about 719.58 kB, above the configured 700 kB warning limit. |
+| `npm test` | Passed | Existing test suite passed. |
+| `node scripts/account-framework.test.mjs` | Passed | Account framework static checks passed. |
+| `RLS_SMOKE_WRITE=1 node scripts/rls-smoke-test.mjs` | Passed | Real Supabase A/B RLS isolation passed. |
+| `node scripts/cloud-sync-smoke-test.mjs` | Passed | Real Supabase sync logic smoke test passed. |
+| `git diff --check` | Passed | Only LF/CRLF warning for `scripts/rls-smoke-test.mjs`; no whitespace error. |
+
+Cloud sync smoke test:
+
+- Added `scripts/cloud-sync-smoke-test.mjs`.
+- Verified `LocalDataAdapter`, `CloudDataAdapter`, and `mergeDocuments`.
+- Verified A/B cloud sync document isolation using normal user sessions.
+- Verified empty cloud document lists do not clear local data.
+- Verified missing cloud client/failure path does not mutate local data.
+- Temporary cloud sync test documents are restored or removed after the test.
+
+Cloud sync UI status:
+
+- Logic-layer cloud sync smoke test: passed.
+- Full AccountPage UI end-to-end sync acceptance: not complete.
+- Reason: the current AccountPage displays sync status and data-management information, but it does not yet expose a complete user-facing upload/download/merge sync action flow to click through.
+
+GitHub Pages workflow status:
+
+- `push` trigger: removed.
+- `pull_request` trigger: absent.
+- `workflow_dispatch`: present.
+- Current deployment risk from pushing `main`: reduced; this workflow no longer automatically deploys from `main`.
+- Deployment still not allowed because production acceptance is incomplete.
+
+Security scan update:
+
+- No test passwords found in tracked project files.
+- No previously pasted database password or secret key found in tracked project files.
+- `.env.local` is ignored by Git.
+- `.env.rls.local` is ignored by Git.
+- Browser/client code still uses only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- Service role references remain limited to documentation/tests and the Supabase Edge Function skeleton.
+
+Remaining blockers:
+
+- Real cloud sync logic has passed, but AccountPage UI sync workflow is not fully accepted end-to-end.
+- Email verification callback has not been fully tested with a real email round trip.
+- Password recovery callback has not been fully tested with a real email round trip.
+- `delete-account` Edge Function has not been deployed or accepted.
+- GitHub repository Variable/Secret values have not been configured for Actions.
+- GitHub Pages workflow is manual-only after this update, but GitHub Actions Variables/Secrets and production callback behavior still need acceptance.
+
+Current decision:
+
+```text
+B. 允许本地提交 / 可考虑非部署分支；不允许 push main；不允许部署
+```
+
+Operational caveat: the workflow has now been changed to manual-only deployment (`workflow_dispatch`) to prevent accidental GitHub Pages deployment from a `main` push. Even with that safety gate, do not push `main` until the user explicitly approves the next release step. Deployment remains blocked until cloud sync UI, GitHub Actions env vars, auth email flows, and production callback behavior are accepted.
+
 ## 0. Automation Attempt - 2026-06-26
 
 Goal: move from account/sync framework to real Supabase acceptance as automatically as possible.
@@ -26,7 +128,7 @@ Current automation blocker:
 - No Supabase access token is available, so I cannot create/list/link a Supabase project, run hosted migrations, configure Auth URLs, create test accounts, deploy Edge Functions, or retrieve project keys.
 - No GitHub CLI/token is available, so I cannot automatically set GitHub Actions Variables/Secrets.
 
-Current decision remains:
+Historical decision at that time, now superseded by the 2026-06-26 verification update above:
 
 ```text
 C. 不允许 push，不允许部署
@@ -248,12 +350,12 @@ Not run successfully in this audit because real Supabase env vars and test accou
 | First login should prompt or safely merge | Partially implemented as framework concept; not production-validated. |
 | Network failure keeps local data | Passed structurally; sync state UI is basic. |
 | Conflict strategy explicit | Partially implemented: namespace merge exists; user-facing conflict flow not fully validated. |
-| Different users do not mix cloud data | Depends on RLS and real session tests; not proven locally. |
-| Local cache user boundary | Not complete: localStorage keys are currently device/site-scoped, not per-account scoped. This needs explicit migration UX before production sync. |
+| Different users do not mix cloud data | Passed at RLS and cloud sync logic layer; full UI session switching still needs end-to-end acceptance. |
+| Local cache user boundary | Partially accepted: sync payload is isolated by user in cloud, but browser localStorage keys are still device/site-scoped. This needs explicit UI migration UX before production sync. |
 | No passwords/tokens in sync payload | Passed statically: registry includes learning/settings keys only. |
 | Sync failure UI | Basic status exists; detailed error UX not fully validated. |
 
-Conclusion: sync framework exists, but real cloud sync is not yet production-accepted.
+Conclusion: sync framework and real cloud sync logic smoke test have passed, but the AccountPage UI sync workflow is not yet production-accepted end to end.
 
 ## 13. Delete Account Edge Function Review
 
@@ -342,27 +444,31 @@ Blocking validation failures by absence of environment:
 Conclusion:
 
 ```text
-C. 不允许 push，不允许部署
+B. 允许本地提交 / 可考虑非部署分支；不允许 push main；不允许部署
 ```
 
 Reason:
 
-No real Supabase project, no real test accounts, no RLS isolation test, and no live sync acceptance have been completed. Account/cloud sync is user data security work, so framework completion is not enough for public deployment.
+The real Supabase project is connected locally, the migration has been executed, and real A/B RLS isolation has passed. Deployment is still blocked because real cloud sync UI acceptance, GitHub Actions environment configuration, production auth callback behavior, email verification, password recovery, and delete-account Edge Function acceptance are not complete.
+
+Important operational caveat: the GitHub Pages workflow has been changed to manual-only deployment (`workflow_dispatch`) to reduce accidental deployment risk. Do not push `main` or deploy until the user explicitly approves the next release step.
 
 ## 19. Next Minimum Manual Steps
 
-1. Create a Supabase project.
-2. Enable email/password Auth.
-3. Add Auth URLs:
+1. Configure Supabase Auth URLs:
    - `http://localhost:5173/`
    - `http://localhost:5173/?auth=callback`
    - `http://127.0.0.1:5173/`
    - `http://127.0.0.1:5173/?auth=callback`
    - `https://soldiersmini-blip.github.io/spanish-learning-center/`
    - `https://soldiersmini-blip.github.io/spanish-learning-center/?auth=callback`
-4. Run `supabase/migrations/202606250001_account_sync.sql` in Supabase SQL Editor.
-5. Create test users A and B.
-6. Run manual two-account acceptance.
-7. Run `scripts/rls-smoke-test.mjs` with env vars.
+2. Configure GitHub repository Variable/Secret:
+   - Variable: `VITE_SUPABASE_URL`
+   - Secret: `VITE_SUPABASE_PUBLISHABLE_KEY`
+3. Validate the real application login, logout, and account page against Supabase.
+4. Perform real cloud sync UI acceptance for A/B accounts.
+5. Test email verification callback with a real email round trip.
+6. Test password recovery callback with a real email round trip.
+7. Keep `delete-account` hidden/unavailable unless the Edge Function is deployed and accepted.
 8. Decide whether account sync UX needs stronger per-account localStorage isolation before deployment.
-9. Only after all live checks pass, decide whether a controlled push/deploy is allowed.
+9. Only after all live checks pass, decide whether deployment to GitHub Pages is allowed.

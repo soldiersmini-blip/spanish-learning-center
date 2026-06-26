@@ -36,6 +36,8 @@ assert(!/USING\s*\(\s*true\s*\)|WITH CHECK\s*\(\s*true\s*\)/i.test(migration), '
 
 assert(workflow.includes('VITE_SUPABASE_URL'), 'GitHub Actions must pass Supabase URL env');
 assert(workflow.includes('VITE_SUPABASE_PUBLISHABLE_KEY'), 'GitHub Actions must pass Supabase publishable key env');
+assert(workflow.includes('workflow_dispatch:'), 'GitHub Pages deployment must keep a manual dispatch trigger');
+assert(!/push:\s*\n\s*branches:\s*\[\s*main\s*\]/.test(workflow), 'GitHub Pages deployment must not auto-deploy on main push before account sync acceptance is complete');
 assert(registry.includes('spanish-progress-a1 / spanish-progress-a2'), 'Local data registry must audit learning progress keys');
 assert(registry.includes('spanish-neural-learning-progress'), 'Local data registry must audit Neural progress key');
 
