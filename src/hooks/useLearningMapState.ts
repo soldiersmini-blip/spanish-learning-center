@@ -86,7 +86,6 @@ export function useLearningMapState(map: LearningMapContent) {
     setState((current) => ({
       ...createDefaultLearningMapState(map.level, map.nodes),
       nodeStatusById: current.nodeStatusById,
-      expandedNodeIds: map.nodes.map((node) => node.id),
     }));
   }
 

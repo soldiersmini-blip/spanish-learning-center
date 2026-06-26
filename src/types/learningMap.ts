@@ -32,6 +32,7 @@ export interface LearningMapContent {
 
 export interface LearningMapViewState {
   level: LearningLevel;
+  viewStateVersion?: number;
   expandedNodeIds: string[];
   hiddenNodeIds: string[];
   nodeStatusById: Record<string, LearningNodeStatus>;

@@ -3,15 +3,17 @@ import type { LearningLevel, LearningMapViewMode, LearningMapViewState, Learning
 import { collectExpandableNodeIds, collectNodeIds, filterKnownNodeIds, sanitizeStatusMap } from './learningMapTree';
 
 const version = 1;
+const viewStateVersion = 2;
 
 export function learningMapStorageKey(level: LearningLevel) {
   return `learning-map:v${version}:${level}`;
 }
 
 export function createDefaultLearningMapState(level: LearningLevel, nodes: LearningNode[]): LearningMapViewState {
-  const expandedNodeIds = nodes.map((node) => node.id);
+  const expandedNodeIds = getDefaultExpandedNodeIds(nodes);
   return {
     level,
+    viewStateVersion,
     expandedNodeIds,
     hiddenNodeIds: [],
     nodeStatusById: {},
@@ -66,9 +68,17 @@ function normalizeLearningMapState(
     ? raw.filterMode
     : 'all';
 
+  const rawExpandedNodeIds = Array.isArray(raw.expandedNodeIds)
+    ? filterKnownNodeIds(raw.expandedNodeIds, knownIds)
+    : defaultState.expandedNodeIds;
+  const shouldUpgradeExpandedDefaults = !raw.viewStateVersion || raw.viewStateVersion < viewStateVersion;
+
   return {
     level,
-    expandedNodeIds: filterKnownNodeIds(Array.isArray(raw.expandedNodeIds) ? raw.expandedNodeIds : defaultState.expandedNodeIds, knownIds),
+    viewStateVersion,
+    expandedNodeIds: shouldUpgradeExpandedDefaults
+      ? Array.from(new Set([...rawExpandedNodeIds, ...defaultState.expandedNodeIds]))
+      : rawExpandedNodeIds,
     hiddenNodeIds: filterKnownNodeIds(Array.isArray(raw.hiddenNodeIds) ? raw.hiddenNodeIds : [], knownIds),
     nodeStatusById,
     hideMastered: Boolean(raw.hideMastered),
@@ -113,4 +123,20 @@ export function syncLegacyCompletedModules(levelId: LevelId, nodes: LearningNode
 
 export function expandedAllState(state: LearningMapViewState, nodes: LearningNode[]): LearningMapViewState {
   return { ...state, expandedNodeIds: collectExpandableNodeIds(nodes) };
+}
+
+function getDefaultExpandedNodeIds(nodes: LearningNode[]) {
+  const expanded = new Set<string>();
+  for (const node of nodes) {
+    expanded.add(node.id);
+  }
+
+  const firstTwoSections = nodes.slice(0, 2);
+  for (const section of firstTwoSections) {
+    for (const child of section.children || []) {
+      if ((child.children || []).length > 0) expanded.add(child.id);
+    }
+  }
+
+  return Array.from(expanded);
 }

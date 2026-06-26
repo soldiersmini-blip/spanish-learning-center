@@ -25,6 +25,8 @@ const storage = read('src/utils/learningMapStorage.ts');
 assert.match(storage, /learning-map:v\$\{version\}:\$\{level\}/, 'learning map storage key should be versioned by level');
 assert.match(storage, /try\s*{[\s\S]*JSON\.parse[\s\S]*}\s*catch/, 'storage reader should tolerate corrupted JSON');
 assert.match(storage, /spanish-progress-\$\{levelId\}/, 'legacy module progress should be read or written for compatibility');
+assert.match(storage, /getDefaultExpandedNodeIds/, 'default state should expand visible learning-map branches');
+assert.match(storage, /viewStateVersion/, 'stored view state should support safe UI migrations');
 
 const levelPage = read('src/components/LevelPage.tsx');
 assert.doesNotMatch(levelPage, /ModulePanel/, 'LevelPage should no longer render the old module accordion list');

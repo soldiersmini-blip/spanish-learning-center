@@ -67,6 +67,14 @@ export default function LearningMap({ map, modules = [], locale }: Props) {
         ) : (
           <div className={`grid gap-4 ${state.viewMode === 'focus' ? 'lg:grid-cols-[minmax(0,1fr)]' : 'lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.25fr)]'}`}>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-950">
+              <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 dark:bg-slate-900">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                  {locale === 'zh' ? '树状学习路径' : locale === 'en' ? 'Learning tree path' : 'Ruta de árbol'}
+                </p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  {locale === 'zh' ? '一级 → 二级 → 知识点' : locale === 'en' ? 'Section → topic → point' : 'Sección → tema → punto'}
+                </p>
+              </div>
               <LearningTree
                 nodes={map.nodes}
                 locale={locale}
