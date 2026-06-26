@@ -16,8 +16,11 @@ Recommended URLs:
 
 - Site URL: `https://soldiersmini-blip.github.io/spanish-learning-center/`
 - Production redirect URL: `https://soldiersmini-blip.github.io/spanish-learning-center/?auth=callback`
+- Production root URL: `https://soldiersmini-blip.github.io/spanish-learning-center/`
 - Local redirect URL: `http://127.0.0.1:5173/?auth=callback`
+- Local root URL: `http://127.0.0.1:5173/`
 - Optional local redirect URL: `http://localhost:5173/?auth=callback`
+- Optional local root URL: `http://localhost:5173/`
 
 The app uses PKCE and exchanges the `code` parameter on startup. It then removes auth query parameters and routes back into the hash app.
 
@@ -65,6 +68,33 @@ Create two test users, User A and User B.
 5. Repeat from User B.
 
 Do not use `USING (true)` or `WITH CHECK (true)` for private user data.
+
+Optional smoke script after creating the real Supabase project:
+
+```powershell
+node scripts/rls-smoke-test.mjs
+```
+
+The script can read values from a local ignored file named `.env.rls.local`:
+
+```text
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+TEST_A_EMAIL=test-a@example.com
+TEST_A_PASSWORD=...
+TEST_B_EMAIL=test-b@example.com
+TEST_B_PASSWORD=...
+```
+
+The script also accepts the longer names `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `RLS_TEST_USER_A_EMAIL`, `RLS_TEST_USER_A_PASSWORD`, `RLS_TEST_USER_B_EMAIL`, and `RLS_TEST_USER_B_PASSWORD`.
+
+The script uses only the publishable key and normal user sessions. It does not use the service role key. By default it does not write test data. To run a stronger write-and-restore check, set:
+
+```powershell
+$env:RLS_SMOKE_WRITE="1"
+```
+
+Do not run write mode against important production accounts unless you have exported a backup first.
 
 ## 6. Email and Anti-Abuse
 
