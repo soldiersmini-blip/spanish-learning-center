@@ -67,7 +67,7 @@ export interface CourseModule {
 }
 
 export interface LevelContent {
-  id: LevelId;
+  id: 'a1' | 'a2';
   title: LocalizedText;
   subtitle: LocalizedText;
   modules: CourseModule[];

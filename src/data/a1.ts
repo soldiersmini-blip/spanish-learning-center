@@ -1,5 +1,4 @@
 import type { GrammarPoint, LevelContent, SentencePattern, SkillItem, VocabCategory, VocabItem } from '../types';
-import { distilledA1Topics } from './curriculum/curriculumMatrix';
 import { a1GrammarTopics } from './grammar/a1Grammar';
 import { a1VocabularyCategories } from './vocabulary/a1';
 
@@ -267,14 +266,6 @@ const a1Skills: SkillItem[] = [
   skill('写', 'Writing', 'Escribir', '写 5 句自我介绍，包含姓名、国籍、城市、职业和喜欢的事物。', ['Me llamo ___.', 'Soy de ___.', 'Me gusta ___.']),
 ];
 
-const distilledA1Skills: SkillItem[] = distilledA1Topics.map((topic) => skill(
-  topic.titleZh,
-  topic.titleZh,
-  topic.titleZh,
-  `${topic.learningGoalZh} 核心语法：${topic.grammarPoints.join('、')}。训练时先听懂场景，再替换句式，最后用自己的信息输出。`,
-  topic.originalExamples.map((item) => item.spanish),
-));
-
 export const a1Content: LevelContent = {
   id: 'a1',
   title: L('A1 入门学习区', 'A1 Beginner Area', 'Área A1 inicial'),
@@ -323,17 +314,6 @@ export const a1Content: LevelContent = {
       quiz: {
         question: L('用 Me llamo、Soy de、Me gusta 各写一句关于自己的句子。', 'Write one sentence about yourself with Me llamo, Soy de, and Me gusta.', 'Escribe una frase personal con Me llamo, Soy de y Me gusta.'),
         answer: L('例：Me llamo Li. Soy de China. Me gusta el café.', 'Example: Me llamo Li. Soy de China. Me gusta el café.', 'Ejemplo: Me llamo Li. Soy de China. Me gusta el café.'),
-      },
-    },
-    {
-      id: 'a1-communicative-path',
-      title: L('A1 交际任务路径', 'A1 communicative task path', 'Ruta comunicativa A1'),
-      description: L('把身份介绍、课堂求助和咖啡馆点单做成能开口的原创任务链。', 'Turn identity, classroom help, and cafe ordering into practical speaking tasks.', 'Convierte identidad, ayuda en clase y cafetería en tareas orales prácticas.'),
-      type: 'skills',
-      skillItems: distilledA1Skills,
-      quiz: {
-        question: L('任选一个任务主题，用 3 个 A1 短句完成一次真实表达。', 'Choose one task theme and complete it with three A1 sentences.', 'Elige un tema y complétalo con tres frases A1.'),
-        answer: L('示例方向：介绍自己、请求重复、点一杯饮品。答案应使用自己的信息，不背固定文本。', 'Example directions: introduce yourself, ask for repetition, or order a drink. Use your own information.', 'Ejemplos: presentarte, pedir repetición o pedir una bebida. Usa tu propia información.'),
       },
     },
     {

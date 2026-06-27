@@ -36,9 +36,9 @@ export function checkTypingAnswer(input: string, answer: string) {
 }
 
 export function buildTrainingQuestions(words: VocabItem[], settings: TrainingSettings, wrongWordIds: string[] = []) {
-  const modes = settings.modes.length > 0 ? settings.modes : defaultTrainingSettings.modes;
-  const pool = getTrainingPool(words, settings, wrongWordIds, modes);
+  const pool = getTrainingPool(words, settings, wrongWordIds);
   const selected = shuffle(pool).slice(0, Math.min(settings.questionCount, pool.length));
+  const modes = settings.modes.length > 0 ? settings.modes : defaultTrainingSettings.modes;
 
   return selected.map((word, index) => {
     const supportedModes = modes.filter((mode) => canBuildMode(word, mode));
@@ -52,12 +52,12 @@ export function getWrongWordIds(results: TrainingAnswerResult[]) {
   return Array.from(new Set(results.filter((item) => !item.correct).map((item) => item.question.sourceWordId)));
 }
 
-function getTrainingPool(words: VocabItem[], settings: TrainingSettings, wrongWordIds: string[], modes: EnabledTrainingMode[]) {
+function getTrainingPool(words: VocabItem[], settings: TrainingSettings, wrongWordIds: string[]) {
   const seen = new Set<string>();
   const base = words.filter((word) => {
     if (!word.id || !word.spanish || !word.zh || !word.example || hasBlockingVocabularyIssue(word)) return false;
-    if (isLowValueGeneratedPhrase(word)) return false;
-    if (!modes.some((mode) => canBuildMode(word, mode))) return false;
+    const phrase = word.partOfSpeech?.includes('短语') || word.partOfSpeech?.includes('鐭');
+    if (phrase && settings.modes.some((mode) => mode !== 'word-recognition')) return false;
     const key = word.spanish.toLocaleLowerCase('es');
     if (seen.has(key)) return false;
     seen.add(key);
@@ -97,7 +97,7 @@ function buildWordRecognitionQuestion(word: VocabItem, pool: VocabItem[], index:
 
 function buildFillChoiceQuestion(word: VocabItem, pool: VocabItem[], index: number, settings: TrainingSettings): TrainingQuestion {
   const answer = stripArticle(word.spanish);
-  const clozeText = getClozeText(word) || word.example;
+  const clozeText = getClozeText(word) || word.example.replace(word.spanish, '______');
 
   return {
     id: `${word.id}-fill-choice-${index}`,
@@ -115,7 +115,7 @@ function buildFillChoiceQuestion(word: VocabItem, pool: VocabItem[], index: numb
 
 function buildTypingQuestion(word: VocabItem, index: number, settings: TrainingSettings): TrainingQuestion {
   const answer = stripArticle(word.spanish);
-  const clozeText = getClozeText(word) || word.example;
+  const clozeText = getClozeText(word) || word.example.replace(word.spanish, '______');
 
   return {
     id: `${word.id}-typing-${index}`,
@@ -138,54 +138,12 @@ function canBuildMode(word: VocabItem, mode: EnabledTrainingMode) {
 
 function getClozeText(word: VocabItem) {
   if (!word.example) return null;
-  if (!isUsefulClozeExample(word)) return null;
   const target = stripArticle(word.spanish);
   if (!target || target.split(/\s+/).length > 1) return null;
   const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const pattern = new RegExp(`\\b${escaped}\\b`, 'i');
   if (!pattern.test(word.example)) return null;
   return word.example.replace(pattern, '______');
-}
-
-function isUsefulClozeExample(word: VocabItem) {
-  const example = word.example.trim();
-  const exampleZh = word.exampleZh?.trim() || '';
-  const spanish = stripArticle(word.spanish);
-  const partOfSpeech = word.partOfSpeech || '';
-  if (!example || !exampleZh || !spanish) return false;
-  if (spanish.split(/\s+/).length > 1) return false;
-  if (isPhraseLike(word)) return false;
-  if (isLowValueGeneratedPhrase(word)) return false;
-  if (isLowValueExampleTemplate(example)) return false;
-  if (/["“”]/.test(example)) return false;
-  if (partOfSpeech.includes('介词') || partOfSpeech.includes('连接词') || partOfSpeech.includes('结构')) return false;
-  return true;
-}
-
-function isPhraseLike(word: VocabItem) {
-  const partOfSpeech = word.partOfSpeech || '';
-  return partOfSpeech.includes('短语') || partOfSpeech.includes('结构') || partOfSpeech.includes('鐭') || partOfSpeech.includes('缁撴瀯');
-}
-
-function isLowValueGeneratedPhrase(word: VocabItem) {
-  const spanish = word.spanish.trim();
-  const example = word.example.trim();
-  const partOfSpeech = word.partOfSpeech || '';
-  if (partOfSpeech.includes('短语') || partOfSpeech.includes('鐭')) {
-    if (example === `Busco ${spanish}.`) return true;
-    if (example === `Voy a ${spanish}.`) return true;
-  }
-  return false;
-}
-
-function isLowValueExampleTemplate(example: string) {
-  return [
-    /^Uso\s+.+\s+en una frase(?: sencilla)?\.$/i,
-    /^Uso\s+".+"\s+en una frase\.$/i,
-    /^Veo\s+.+\.$/i,
-    /^Es\s+.+\.$/i,
-    /^Quiero\s+\S+\s+hoy\.$/i,
-  ].some((pattern) => pattern.test(example));
 }
 
 function getTypingHint(answer: string, level: TypingHintLevel, zh: string) {

@@ -57,7 +57,6 @@ const filesToRequirePageHeader = [
   'src/components/LevelPage.tsx',
   'src/components/ComingSoon.tsx',
   'src/components/test/TestHeader.tsx',
-  'src/pages/account/AccountPage.tsx',
   'src/pages/SettingsPage.tsx',
   'src/pages/NeuralWorkspacePage.tsx',
 ];

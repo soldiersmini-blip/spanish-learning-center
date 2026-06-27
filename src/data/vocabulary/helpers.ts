@@ -24,7 +24,7 @@ export function simple(level: VocabularyLevel, category: string, terms: Term[], 
   return terms.map(([spanish, zh, en, partOfSpeech], index) => {
     const [example, exampleZh] = template
       ? template(spanish, zh, partOfSpeech, [spanish, zh, en, partOfSpeech])
-      : [`Aprendo la palabra "${spanish}".`, `我学习“${zh}”这个词。`];
+      : [`Uso ${spanish} en una frase sencilla.`, `我在一个简单句里使用“${zh}”。`];
     return withId(level, category, { spanish, zh, en, partOfSpeech, example, exampleZh }, index);
   });
 }
@@ -58,8 +58,7 @@ export function adjectivePhrases(
       const [nounEs, nounZh, nounEn, gender] = noun;
       const adjEs = gender === 'f' ? adjective[1] : adjective[0];
       const spanish = `${nounEs} ${adjEs}`;
-      const adjectiveZh = adjective[2].replace(/的$/, '');
-      const zh = `${adjectiveZh}的${nounZh}`;
+      const zh = `${adjective[2]}的${nounZh}`;
       const en = `${adjective[3]} ${nounEn}`;
       items.push(withId(level, category, {
         spanish,
@@ -148,7 +147,7 @@ export function exampleForTerm(spanish: string, zh: string, partOfSpeech: string
     return exampleForAdjective(spanish, zh);
   }
   if (partOfSpeech.includes('副词') || partOfSpeech.includes('短语') || partOfSpeech.includes('鍓') || partOfSpeech.includes('鐭')) {
-    return [`Practico la expresión "${spanish}".`, `我练习“${zh}”这个表达。`];
+    return [`Uso "${spanish}" en una frase.`, `我在句子里使用“${zh}”。`];
   }
   return exampleForNoun(spanish, zh);
 }
@@ -156,17 +155,6 @@ export function exampleForTerm(spanish: string, zh: string, partOfSpeech: string
 export function exampleForVerb(spanish: string, zh: string): [string, string] {
   const examples: Record<string, [string, string]> = {
     pedir: ['Quiero pedir un café.', '我想点一杯咖啡。'],
-    levantarse: ['Me levanto a las siete.', '我七点起床。'],
-    ducharse: ['Me ducho por la mañana.', '我早上洗澡。'],
-    acostarse: ['Me acuesto temprano.', '我早睡。'],
-    despertarse: ['Me despierto a las siete.', '我七点醒来。'],
-    vestirse: ['Me visto después de ducharme.', '我洗澡后穿衣服。'],
-    peinarse: ['Me peino antes de salir.', '我出门前梳头。'],
-    afeitarse: ['Me afeito por la mañana.', '我早上刮胡子。'],
-    maquillarse: ['Me maquillo para la fiesta.', '我为了聚会化妆。'],
-    conectarse: ['Me conecto al wifi.', '我连接无线网络。'],
-    despedirse: ['Me despido de mis amigos.', '我和朋友们告别。'],
-    presentarse: ['Me presento en clase.', '我在课堂上做自我介绍。'],
     devolver: ['Quiero devolver esta camisa.', '我想退回这件衬衫。'],
     aprobar: ['Espero aprobar el examen.', '我希望通过考试。'],
     suspender: ['No quiero suspender el examen.', '我不想考试不及格。'],
@@ -254,9 +242,6 @@ export function exampleForVerb(spanish: string, zh: string): [string, string] {
     contar: ['Cuento hasta diez.', '我数到十。'],
   };
   if (examples[spanish]) return examples[spanish];
-  if (/(?:arse|erse|irse)$/.test(spanish)) {
-    return [`Quiero ${spanish.replace(/se$/, 'me')} hoy.`, `我今天想${zh}。`];
-  }
   return [`Quiero ${spanish} hoy.`, `我今天想${zh}。`];
 }
 

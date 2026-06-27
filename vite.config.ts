@@ -12,9 +12,6 @@ function getBuildCommit() {
 
 export default defineConfig({
   base: '/spanish-learning-center/',
-  build: {
-    chunkSizeWarningLimit: 700,
-  },
   define: {
     __APP_VERSION__: JSON.stringify('2026.06.25'),
     __BUILD_COMMIT__: JSON.stringify(getBuildCommit()),
