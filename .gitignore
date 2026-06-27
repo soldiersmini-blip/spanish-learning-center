@@ -7,3 +7,11 @@ dist
 *.log
 vite-dev.err
 vite-dev.log
+
+# Local textbook reference materials should stay outside Git.
+Spanish_Free_Textbooks_*/
+textbook-reference-materials/
+*.pdf
+*.mp3
+*.m4a
+*.wav

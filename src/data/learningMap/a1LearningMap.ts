@@ -106,6 +106,23 @@ export const a1LearningMap: LearningMapContent = {
         lesson('a1-sentences-likes-routine', '喜欢、不喜欢与日常安排', 'Likes, dislikes, and routines', 'Gustos y rutina diaria'),
       ]),
     ], ['patterns'], '把词汇和语法压成可替换的口语模板。'),
+    node('a1-communicative-path', 'A1 交际任务路径', 'A1 communicative task path', 'Ruta comunicativa A1', 'section', [
+      node('a1-distilled-identity-starter', '身份、姓名与来源', 'Identity, name, and origin', 'Identidad, nombre y origen', 'topic', [
+        lesson('a1-distilled-identity-goal', '用 4-6 句介绍自己', 'Introduce yourself in four to six sentences', 'Presentarte en cuatro a seis frases', ['speaking', 'identity']),
+        lesson('a1-distilled-identity-questions', '询问姓名、来源和学习目的', 'Ask about name, origin, and learning goals', 'Preguntar nombre, origen y objetivo de aprendizaje', ['questions', 'identity']),
+        lesson('a1-distilled-identity-output', '把 ser / vivir / estudiar 连接成自我介绍', 'Connect ser, vivir, and estudiar in a self-introduction', 'Conectar ser, vivir y estudiar en una presentación', ['grammar', 'output']),
+      ], ['distilled', 'speaking', 'identity'], '先把“我是谁、从哪里来、为什么学”变成能开口的最小表达。'),
+      node('a1-distilled-classroom-survival', '课堂求助与学习动作', 'Classroom help and study actions', 'Ayuda en clase y acciones de estudio', 'topic', [
+        lesson('a1-distilled-classroom-repeat', '请求重复、慢一点和解释', 'Ask for repetition, slower speech, and explanation', 'Pedir repetición, habla lenta y explicación', ['classroom', 'speaking']),
+        lesson('a1-distilled-classroom-negative', '用 no entiendo 说明没听懂', 'Use no entiendo to say you do not understand', 'Usar no entiendo para decir que no entiendes', ['negative', 'classroom']),
+        lesson('a1-distilled-classroom-question', '用 tengo una pregunta 发起提问', 'Use tengo una pregunta to start a question', 'Usar tengo una pregunta para preguntar', ['grammar', 'classroom']),
+      ], ['distilled', 'classroom', 'survival'], '把课堂里的卡壳时刻变成可训练的西语求助句。'),
+      node('a1-distilled-cafe-ordering', '咖啡馆点单与基础需求', 'Cafe ordering and basic needs', 'Pedir en una cafetería y necesidades básicas', 'topic', [
+        lesson('a1-distilled-cafe-request', '用 quiero 点饮品和食物', 'Order drinks and food with quiero', 'Pedir bebidas y comida con quiero', ['restaurant', 'speaking']),
+        lesson('a1-distilled-cafe-articles', '用 un / una 配合点单名词', 'Use un and una with order nouns', 'Usar un y una con sustantivos de pedido', ['articles', 'food']),
+        lesson('a1-distilled-cafe-payment', '询价、结账和刷卡付款', 'Ask prices, request the bill, and pay by card', 'Preguntar precios, pedir la cuenta y pagar con tarjeta', ['shopping', 'restaurant']),
+      ], ['distilled', 'restaurant', 'ordering'], '把饮品、数量、礼貌请求和付款连成一个完整小场景。'),
+    ], ['distilled', 'tasks'], '把词汇和语法压缩成真实生活里可以直接使用的 A1 小任务。'),
     node('a1-skills', '听说读写训练', 'Listening, speaking, reading, writing', 'Escuchar, hablar, leer y escribir', 'section', [
       node('a1-skills-input', '输入训练', 'Input practice', 'Práctica de entrada', 'topic', [
         lesson('a1-skills-listening', '听力短句', 'Short listening texts', 'Textos breves de escucha'),
