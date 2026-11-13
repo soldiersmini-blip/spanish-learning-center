@@ -1,0 +1,30 @@
+:root{--motion-out:cubic-bezier(.23,1,.32,1);--motion-fast:120ms;--motion-enter:180ms}
+/* Press feedback is brief and mouse/touch-only; focus navigation stays immediate. */
+button:not(.node){transition:transform 100ms var(--motion-out),opacity 100ms var(--motion-out)}
+html[data-input="pointer"] button:not(.node):not(:disabled):active{transform:scale(.97);transition-duration:140ms}
+html[data-input="keyboard"] button{transition:none}
+@media(hover:hover) and (pointer:fine){button.quiet:not(:disabled):hover,.zoom-controls button:hover{background:#2a333b}button.primary:not(:disabled):hover{filter:brightness(1.07)}}
+#canvas{touch-action:none}#world{transition:transform 180ms var(--motion-out)}
+#canvas.dragging #world,#world.instant{transition:none}
+.node{left:0;top:0;transition:none;isolation:isolate}
+.node::after{content:"";position:absolute;inset:-4px;border:2px solid #b3cf98;border-radius:11px;opacity:0;pointer-events:none;transition:opacity 140ms var(--motion-out)}
+.node.selected{outline:none}.node.selected::after{opacity:1}
+html[data-input="keyboard"] .node::after{transition:none}
+.node.working .node-indicator{animation:work-indicator 1000ms linear infinite}
+@keyframes work-indicator{0%,100%{opacity:1}50%{opacity:.35}}
+.page-hidden .node.working .node-indicator{animation-play-state:paused}
+.job-card{position:relative;isolation:isolate}.job-card[data-outcome="passed"],.job-card[data-outcome="pass"]{border-color:#4b6246}.job-card[data-outcome="hold"],.job-card[data-outcome="unknown"],.job-card[data-outcome="provenance-mismatch"]{border-color:#8e7143}
+.job-art{overflow:hidden}.job-art img{display:block}
+.command-bar[data-outcome="blocked"]{border-color:#96714b}.command-bar[data-outcome="completed"]{border-color:#627d53}
+.tools button[aria-busy="true"]{opacity:.7;cursor:wait}
+/* Toast remains mounted, allowing rapid messages and dismissal to retarget continuously. */
+#toast{display:block;visibility:hidden;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:transform 120ms var(--motion-out),opacity 120ms var(--motion-out),visibility 0s 120ms}
+#toast.is-visible{visibility:visible;opacity:1;transform:translate(-50%,0);transition-duration:180ms,180ms,0s;transition-delay:0s}
+#toast[data-tone="error"]{background:#eed8c1;color:#4c2f1b}
+html[data-input="keyboard"] #toast{transition:none;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){
+ #world{transition:none}button:not(.node){transition:opacity 100ms var(--motion-out)}
+ html[data-input="pointer"] button:not(.node):not(:disabled):active{transform:none;opacity:.78}
+ .node.working .node-indicator{animation:none;opacity:1}.node::after{transition:opacity 100ms var(--motion-out)}
+ #toast,#toast.is-visible{transform:translate(-50%,0);transition:opacity 100ms var(--motion-out),visibility 0s 100ms}#toast.is-visible{transition-delay:0s}
+}
